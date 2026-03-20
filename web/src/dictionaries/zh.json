@@ -1,0 +1,66 @@
+{
+  "nav": {
+    "home": "主頁",
+    "swimmers": "泳手",
+    "clubs": "泳會",
+    "competitions": "比賽",
+    "leaderboards": "排行榜",
+    "compare": "比較",
+    "trends": "趨勢"
+  },
+  "home": {
+    "title": "香港游泳",
+    "subtitle": "香港游泳比賽成績、排名及數據分析",
+    "searchPlaceholder": "搜尋泳手、泳會或比賽...",
+    "recentCompetitions": "最近比賽",
+    "viewAll": "查看全部"
+  },
+  "swimmer": {
+    "personalBests": "個人最佳",
+    "raceHistory": "比賽記錄",
+    "longCourse": "長池 (50米)",
+    "shortCourse": "短池 (25米)",
+    "club": "泳會",
+    "age": "年齡",
+    "competitions": "比賽場次",
+    "results": "比賽結果",
+    "firstCompeted": "首次參賽",
+    "lastCompeted": "最近參賽",
+    "event": "項目",
+    "time": "時間",
+    "date": "日期",
+    "rank": "香港排名"
+  },
+  "competition": {
+    "results": "比賽結果",
+    "event": "項目",
+    "venue": "場地",
+    "date": "日期",
+    "course": "池距",
+    "tier": "組別"
+  },
+  "leaderboard": {
+    "title": "排行榜",
+    "filters": "篩選",
+    "gender": "性別",
+    "ageGroup": "年齡組",
+    "stroke": "泳式",
+    "distance": "距離",
+    "season": "賽季",
+    "allTime": "歷屆"
+  },
+  "common": {
+    "male": "男",
+    "female": "女",
+    "place": "#",
+    "name": "姓名",
+    "team": "泳會",
+    "seedTime": "報名時間",
+    "finalsTime": "決賽時間",
+    "noResults": "沒有結果",
+    "loading": "載入中...",
+    "lc": "長池",
+    "sc": "短池",
+    "exportCsv": "匯出 CSV"
+  }
+}

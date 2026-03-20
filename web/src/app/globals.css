@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f0f9ff;
+  --foreground: #0c4a6e;
+  --surface: #ffffff;
+  --surface-alt: #e0f2fe;
+  --border: #bae6fd;
+  --border-strong: #7dd3fc;
+  --muted: #0369a1;
+  --muted-light: #38bdf8;
+  --accent: #f59e0b;
+  --pool-deep: #0c4a6e;
+  --pool-mid: #0284c7;
+  --pool-light: #38bdf8;
+  --pool-surface: #e0f2fe;
+}
+
+.dark {
+  --background: #0b1a2e;
+  --foreground: #e0f2fe;
+  --surface: #0f2440;
+  --surface-alt: #132d4f;
+  --border: #1e3a5f;
+  --border-strong: #2563eb;
+  --muted: #7dd3fc;
+  --muted-light: #38bdf8;
+  --accent: #fbbf24;
+  --pool-deep: #0b1a2e;
+  --pool-mid: #0ea5e9;
+  --pool-light: #38bdf8;
+  --pool-surface: #132d4f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-pool-border: var(--border);
+  --color-pool-border-strong: var(--border-strong);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-pool-deep: var(--pool-deep);
+  --color-pool-mid: var(--pool-mid);
+  --color-pool-light: var(--pool-light);
+  --color-pool-surface: var(--pool-surface);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Smooth transitions for interactive elements */
+a, button {
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+/* Wave divider */
+.wave-divider {
+  position: relative;
+  height: 24px;
+  overflow: hidden;
+}
+.wave-divider::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 25%,
+    var(--border) 25%,
+    var(--border) 26%,
+    transparent 26%,
+    transparent 50%
+  );
+  opacity: 0.3;
+}
+
+/* Lane line pattern for section headers */
+.lane-line {
+  background-image: linear-gradient(
+    to right,
+    var(--border) 0%,
+    var(--border) 50%,
+    transparent 50%,
+    transparent 100%
+  );
+  background-size: 8px 2px;
+  background-repeat: repeat-x;
+  background-position: bottom;
+  padding-bottom: 8px;
+}
+
+/* Water shimmer hover for table rows */
+.water-row:hover {
+  background: linear-gradient(90deg, var(--surface-alt) 0%, var(--surface) 50%, var(--surface-alt) 100%) !important;
+}
+
+/* Timing board style for times */
+.timing-display {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* Medal colors */
+.medal-gold { color: #eab308; }
+.medal-silver { color: #94a3b8; }
+.medal-bronze { color: #d97706; }
+
+/* Active filter pill */
+.filter-active {
+  background: linear-gradient(135deg, #0284c7, #0ea5e9);
+  color: white;
+  box-shadow: 0 1px 3px rgba(14, 165, 233, 0.3);
+}
+
+/* Pool depth accent bar on cards */
+.depth-card {
+  border-left: 3px solid var(--pool-mid);
+}
+.dark .depth-card {
+  border-left-color: var(--pool-light);
+}

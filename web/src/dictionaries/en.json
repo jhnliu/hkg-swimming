@@ -1,0 +1,66 @@
+{
+  "nav": {
+    "home": "Home",
+    "swimmers": "Swimmers",
+    "clubs": "Clubs",
+    "competitions": "Competitions",
+    "leaderboards": "Leaderboards",
+    "compare": "Compare",
+    "trends": "Trends"
+  },
+  "home": {
+    "title": "HKG Swimming",
+    "subtitle": "Hong Kong swimming results, rankings, and analytics",
+    "searchPlaceholder": "Search swimmers, clubs, or competitions...",
+    "recentCompetitions": "Recent Competitions",
+    "viewAll": "View all"
+  },
+  "swimmer": {
+    "personalBests": "Personal Bests",
+    "raceHistory": "Race History",
+    "longCourse": "Long Course (50m)",
+    "shortCourse": "Short Course (25m)",
+    "club": "Club",
+    "age": "Age",
+    "competitions": "Competitions",
+    "results": "Results",
+    "firstCompeted": "First competed",
+    "lastCompeted": "Last competed",
+    "event": "Event",
+    "time": "Time",
+    "date": "Date",
+    "rank": "HK Rank"
+  },
+  "competition": {
+    "results": "Results",
+    "event": "Event",
+    "venue": "Venue",
+    "date": "Date",
+    "course": "Course",
+    "tier": "Tier"
+  },
+  "leaderboard": {
+    "title": "Leaderboards",
+    "filters": "Filters",
+    "gender": "Gender",
+    "ageGroup": "Age Group",
+    "stroke": "Stroke",
+    "distance": "Distance",
+    "season": "Season",
+    "allTime": "All Time"
+  },
+  "common": {
+    "male": "Male",
+    "female": "Female",
+    "place": "#",
+    "name": "Name",
+    "team": "Team",
+    "seedTime": "Seed",
+    "finalsTime": "Finals",
+    "noResults": "No results found",
+    "loading": "Loading...",
+    "lc": "LC",
+    "sc": "SC",
+    "exportCsv": "Export CSV"
+  }
+}
