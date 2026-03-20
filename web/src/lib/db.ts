@@ -515,7 +515,7 @@ export async function getBiggestImprovers(
   conditions.push(`${CLEAN_TIME} ~ '^[0-9]+([:.][0-9]+)*$'`);
   const where = conditions.join(" AND ");
 
-  const rows = await sql.unsafe(`
+  const rows = await sql`${sql.unsafe(`
     WITH recent AS (
       SELECT swimmer_id, swimmer_name, club, distance, stroke, course, gender,
         finals_time, date,
@@ -557,7 +557,7 @@ export async function getBiggestImprovers(
       ON i.swimmer_id = r.swimmer_id
     ORDER BY i.improvement_pct DESC
     LIMIT ${limit}
-  `);
+  `)}`;
   return rows as unknown as Improver[];
 }
 
@@ -726,6 +726,41 @@ export async function getClubAnalytics(clubCode: string) {
       last_result: string;
     },
   };
+}
+
+// --- Feedback ---
+
+export interface FeedbackItem {
+  id: number;
+  name: string;
+  category: string;
+  title: string;
+  description: string;
+  status: string;
+  created_at: string;
+}
+
+export async function getFeedback(): Promise<FeedbackItem[]> {
+  const rows = await sql`
+    SELECT id, name, category, title, description, status, created_at::TEXT
+    FROM feedback
+    ORDER BY created_at DESC
+  `;
+  return rows as FeedbackItem[];
+}
+
+export async function submitFeedback(data: {
+  name: string;
+  category: string;
+  title: string;
+  description: string;
+}): Promise<FeedbackItem> {
+  const rows = await sql`
+    INSERT INTO feedback (name, category, title, description)
+    VALUES (${data.name || "Anonymous"}, ${data.category}, ${data.title}, ${data.description})
+    RETURNING id, name, category, title, description, status, created_at::TEXT
+  `;
+  return rows[0] as FeedbackItem;
 }
 
 // --- Formatting helpers ---

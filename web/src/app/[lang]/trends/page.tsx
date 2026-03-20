@@ -234,7 +234,7 @@ export default async function TrendsPage({
                   const timeDrop = imp.old_seconds - imp.new_seconds;
                   return (
                     <tr
-                      key={`${imp.swimmer_id}_${imp.distance}_${imp.stroke}_${imp.course}`}
+                      key={`${imp.swimmer_id}_${imp.distance}_${imp.stroke}_${imp.course}_${i}`}
                       className={`water-row border-b border-pool-border/50 dark:border-pool-border/50 ${
                         i % 2 === 1 ? "bg-pool-surface/50 dark:bg-surface-alt/30" : ""
                       }`}
@@ -341,7 +341,7 @@ export default async function TrendsPage({
                     b.time_standard;
                   return (
                     <tr
-                      key={`${b.swimmer_id}_${b.distance}_${b.stroke}_${b.course}_${b.date}`}
+                      key={`${b.swimmer_id}_${b.distance}_${b.stroke}_${b.course}_${b.date}_${i}`}
                       className={`water-row border-b border-pool-border/50 dark:border-pool-border/50 ${
                         i % 2 === 1 ? "bg-pool-surface/50 dark:bg-surface-alt/30" : ""
                       }`}

@@ -6,7 +6,8 @@
     "competitions": "Competitions",
     "leaderboards": "Leaderboards",
     "compare": "Compare",
-    "trends": "Trends"
+    "trends": "Trends",
+    "feedback": "Feedback"
   },
   "home": {
     "title": "HKG Swimming",
@@ -48,6 +49,25 @@
     "distance": "Distance",
     "season": "Season",
     "allTime": "All Time"
+  },
+  "feedback": {
+    "title": "Feedback & Issues",
+    "subtitle": "Report bugs, request features, or share your thoughts. All submissions are public.",
+    "submitTitle": "Submit Feedback",
+    "nameLabel": "Your Name",
+    "namePlaceholder": "Anonymous",
+    "categoryLabel": "Category",
+    "titleLabel": "Subject",
+    "titlePlaceholder": "Brief summary of your feedback",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe the issue or suggestion in detail...",
+    "submitButton": "Submit",
+    "thankYou": "Thank you for your feedback! It has been submitted successfully.",
+    "errorMissing": "Please fill in both the subject and description.",
+    "listTitle": "All Feedback & Issues",
+    "openLabel": "open",
+    "resolvedLabel": "resolved",
+    "noItems": "No feedback yet. Be the first to submit!"
   },
   "common": {
     "male": "Male",

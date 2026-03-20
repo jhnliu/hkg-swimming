@@ -1,5 +1,55 @@
 # Changelog
 
+## 2026-03-21 — Live on Vercel
+
+Website is live at **hkg-swimming.vercel.app**.
+
+### Readability Fix
+- Fixed poor contrast in light mode: body text was dark blue on light blue background
+- Background: `#f0f9ff` (light blue) → `#f8fafc` (near-white) for clean neutral base
+- Foreground: `#0c4a6e` (dark blue) → `#0f172a` (near-black) for maximum readability
+- Muted text: `#0369a1` (blue) → `#64748b` (slate gray) for proper secondary text
+- Dark mode: foreground `#e0f2fe` → `#f1f5f9` (clean white), muted `#7dd3fc` → `#94a3b8` (slate)
+- Swimming theme now expressed through nav, hero, accents, and borders — not body text
+
+### Deployment
+- Deployed to Vercel with Root Directory set to `web/`
+- `DATABASE_URL` environment variable configured for Neon Postgres
+
+## 2026-03-21 — Swimming Theme UI & Data Fixes
+
+### Swimming-Themed UI Overhaul
+- Replaced generic zinc/gray palette with pool-inspired color system:
+  - Light mode: pool tile white (`#f0f9ff`) background, deep blue (`#0c4a6e`) foreground
+  - Dark mode: night ocean (`#0b1a2e`) background, sky blue (`#e0f2fe`) foreground
+  - Custom CSS variables: `--pool-deep`, `--pool-mid`, `--pool-light`, `--surface`, `--surface-alt`
+- **Nav**: deep blue gradient bar (`from-pool-deep via-pool-mid`) with white text, replacing flat white/dark bar
+- **Home hero**: full gradient section (deep blue → sky) with SVG wave decoration at bottom and frosted glass search input
+- **Stats cards**: left-side "pool depth marker" accent bar (`depth-card`) with category icons
+- **Tables**: pool-themed header rows, `water-row` hover shimmer effect, alternating blue-tinted rows, `timing-display` class for monospace times with tabular numerals
+- **Leaderboards & competitions**: gold/silver/bronze circular medal badges for top 3 placements
+- **Filter pills**: gradient active state (`filter-active`) with subtle glow shadow
+- **Section dividers**: `lane-line` dashed bottom border pattern mimicking pool lane ropes
+- **Course badges**: LC = sky blue, SC = teal (replacing generic blue/emerald)
+- **Swimmer profile**: card-style header with depth accent bar
+- **Charts**: ocean blue primary color (`#0284c7`), pool-themed grid lines and tooltips
+- **Dark mode**: deep navy/ocean palette with glowing blue accents instead of plain black
+- Applied consistently across all 10+ pages and 7 components
+
+### Data Quality Fixes
+- **`finals_time` parsing** (`db.ts`): Fixed `CAST AS DOUBLE PRECISION` crash on values like `"55.80S"` (time standard letter glued to time)
+  - Added `CLEAN_TIME` SQL helper: `REGEXP_REPLACE(finals_time, '[^0-9:.]+$', '')` strips trailing non-numeric chars before parsing
+  - `TIME_TO_SECONDS` now uses `CLEAN_TIME` in all branches; fallback changed from `ELSE CAST(...)` to `ELSE NULL`
+  - Added explicit `WHEN ... ~ '^[0-9.]+$'` check for plain seconds format
+  - `VALID_TIME_FILTER` now requires cleaned time matches `'^[0-9]+([:.][0-9]+)*$'`
+  - `getBiggestImprovers` query also validates time format before entering CTE pipeline
+- **`fix_data.py`**: Added step 7 — strips trailing letter suffixes from `finals_time` in SQLite (e.g. `"55.80S"` → time `"55.80"`, standard `"S"` moved to `time_standard`)
+
+### Bug Fixes
+- Fixed `<Script>` tag warning in Next.js 16: moved theme-init from `next/script` (body) to `<script dangerouslySetInnerHTML>` in `<head>`
+- Fixed "Functions cannot be passed to Client Components" error: moved `formatStroke`/`formatStrokeZh` logic into `StrokeTable` client component instead of passing functions as props across server/client boundary
+- Fixed `improvers.map is not a function` error: added `CLEAN_TIME` regex validation to `getBiggestImprovers` WHERE clause to prevent NULL `time_seconds` from propagating through CTEs
+
 ## 2026-03-21 — Data Quality & Rebuild
 
 ### Parser fixes (`parse_results.py`)

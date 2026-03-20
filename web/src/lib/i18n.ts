@@ -24,6 +24,7 @@ export interface Dict {
     leaderboards: string;
     compare: string;
     trends: string;
+    feedback: string;
   };
   home: {
     title: string;
@@ -65,6 +66,25 @@ export interface Dict {
     distance: string;
     season: string;
     allTime: string;
+  };
+  feedback: {
+    title: string;
+    subtitle: string;
+    submitTitle: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    categoryLabel: string;
+    titleLabel: string;
+    titlePlaceholder: string;
+    descriptionLabel: string;
+    descriptionPlaceholder: string;
+    submitButton: string;
+    thankYou: string;
+    errorMissing: string;
+    listTitle: string;
+    openLabel: string;
+    resolvedLabel: string;
+    noItems: string;
   };
   common: {
     male: string;

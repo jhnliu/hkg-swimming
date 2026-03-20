@@ -3,34 +3,34 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f0f9ff;
-  --foreground: #0c4a6e;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --surface: #ffffff;
-  --surface-alt: #e0f2fe;
+  --surface-alt: #f0f9ff;
   --border: #bae6fd;
   --border-strong: #7dd3fc;
-  --muted: #0369a1;
-  --muted-light: #38bdf8;
+  --muted: #64748b;
+  --muted-light: #94a3b8;
   --accent: #f59e0b;
   --pool-deep: #0c4a6e;
   --pool-mid: #0284c7;
   --pool-light: #38bdf8;
-  --pool-surface: #e0f2fe;
+  --pool-surface: #f0f9ff;
 }
 
 .dark {
   --background: #0b1a2e;
-  --foreground: #e0f2fe;
+  --foreground: #f1f5f9;
   --surface: #0f2440;
   --surface-alt: #132d4f;
   --border: #1e3a5f;
   --border-strong: #2563eb;
-  --muted: #7dd3fc;
-  --muted-light: #38bdf8;
+  --muted: #94a3b8;
+  --muted-light: #64748b;
   --accent: #fbbf24;
   --pool-deep: #0b1a2e;
   --pool-mid: #0ea5e9;
-  --pool-light: #38bdf8;
+  --pool-light: #7dd3fc;
   --pool-surface: #132d4f;
 }
 

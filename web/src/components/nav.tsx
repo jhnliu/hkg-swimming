@@ -18,6 +18,7 @@ export function Nav({ lang, dict }: { lang: Locale; dict: Dict }) {
     { href: `/${lang}/clubs`, label: dict.nav.clubs },
     { href: `/${lang}/compare`, label: dict.nav.compare },
     { href: `/${lang}/trends`, label: dict.nav.trends },
+    { href: `/${lang}/feedback`, label: dict.nav.feedback },
   ];
 
   const otherLang = lang === "en" ? "zh" : "en";

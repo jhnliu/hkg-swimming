@@ -6,7 +6,8 @@
     "competitions": "比賽",
     "leaderboards": "排行榜",
     "compare": "比較",
-    "trends": "趨勢"
+    "trends": "趨勢",
+    "feedback": "意見反饋"
   },
   "home": {
     "title": "香港游泳",
@@ -48,6 +49,25 @@
     "distance": "距離",
     "season": "賽季",
     "allTime": "歷屆"
+  },
+  "feedback": {
+    "title": "意見反饋",
+    "subtitle": "報告錯誤、請求功能或分享你的想法。所有提交內容均公開可見。",
+    "submitTitle": "提交意見",
+    "nameLabel": "你的名字",
+    "namePlaceholder": "匿名",
+    "categoryLabel": "類別",
+    "titleLabel": "主題",
+    "titlePlaceholder": "簡述你的意見",
+    "descriptionLabel": "詳細描述",
+    "descriptionPlaceholder": "詳細描述問題或建議...",
+    "submitButton": "提交",
+    "thankYou": "感謝你的意見！已成功提交。",
+    "errorMissing": "請填寫主題和描述。",
+    "listTitle": "所有意見及問題",
+    "openLabel": "待處理",
+    "resolvedLabel": "已解決",
+    "noItems": "暫時沒有意見。成為第一個提交的人！"
   },
   "common": {
     "male": "男",
