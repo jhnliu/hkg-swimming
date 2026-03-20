@@ -157,15 +157,32 @@ export function GenderPie({
   );
 }
 
+const STROKE_EN: Record<string, string> = {
+  Freestyle: "Freestyle",
+  Backstroke: "Backstroke",
+  Breaststroke: "Breaststroke",
+  Butterfly: "Butterfly",
+  IM: "Individual Medley",
+  "Freestyle Relay": "Freestyle Relay",
+};
+const STROKE_ZH: Record<string, string> = {
+  Freestyle: "自由泳",
+  Backstroke: "背泳",
+  Breaststroke: "蛙泳",
+  Butterfly: "蝶泳",
+  IM: "個人四式",
+  "Freestyle Relay": "自由泳接力",
+};
+
 export function StrokeTable({
   data,
   lang,
-  formatStroke,
 }: {
   data: ClubStrokeStrength[];
   lang: string;
-  formatStroke: (s: string) => string;
 }) {
+  const formatStroke = (s: string) =>
+    (lang === "zh" ? STROKE_ZH[s] : STROKE_EN[s]) || s;
   return (
     <div className="overflow-x-auto rounded-lg border border-pool-border dark:border-pool-border">
       <table className="w-full text-sm">

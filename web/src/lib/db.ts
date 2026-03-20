@@ -81,16 +81,21 @@ export interface PersonalBest {
 
 // --- Time conversion SQL fragment for Postgres ---
 
+// Strip trailing non-numeric chars (e.g. "55.80S" -> "55.80") before parsing
+const CLEAN_TIME = `REGEXP_REPLACE(finals_time, '[^0-9:.]+$', '')`;
+
 const TIME_TO_SECONDS = `
   CASE
-    WHEN finals_time ~ '^[0-9]+:[0-9]+:[0-9.]+$' THEN
-      CAST(SPLIT_PART(finals_time, ':', 1) AS DOUBLE PRECISION) * 3600 +
-      CAST(SPLIT_PART(finals_time, ':', 2) AS DOUBLE PRECISION) * 60 +
-      CAST(SPLIT_PART(finals_time, ':', 3) AS DOUBLE PRECISION)
-    WHEN finals_time ~ '^[0-9]+:[0-9.]+$' THEN
-      CAST(SPLIT_PART(finals_time, ':', 1) AS DOUBLE PRECISION) * 60 +
-      CAST(SPLIT_PART(finals_time, ':', 2) AS DOUBLE PRECISION)
-    ELSE CAST(finals_time AS DOUBLE PRECISION)
+    WHEN ${CLEAN_TIME} ~ '^[0-9]+:[0-9]+:[0-9.]+$' THEN
+      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 1) AS DOUBLE PRECISION) * 3600 +
+      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 2) AS DOUBLE PRECISION) * 60 +
+      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 3) AS DOUBLE PRECISION)
+    WHEN ${CLEAN_TIME} ~ '^[0-9]+:[0-9.]+$' THEN
+      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 1) AS DOUBLE PRECISION) * 60 +
+      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 2) AS DOUBLE PRECISION)
+    WHEN ${CLEAN_TIME} ~ '^[0-9.]+$' THEN
+      CAST(${CLEAN_TIME} AS DOUBLE PRECISION)
+    ELSE NULL
   END
 `;
 
@@ -98,6 +103,7 @@ const VALID_TIME_FILTER = `
   finals_time != '' AND finals_time IS NOT NULL
   AND time_standard NOT IN ('SCR', 'DQ', 'DNF', 'NS', '')
   AND stroke NOT LIKE '%Relay%'
+  AND ${CLEAN_TIME} ~ '^[0-9]+([:.][0-9]+)*$'
 `;
 
 // --- Queries ---
@@ -506,6 +512,7 @@ export async function getBiggestImprovers(
   else if (filters.gender === "Female") conditions.push("gender IN ('Women', 'Girls')");
   if (filters.club) conditions.push(`club = '${filters.club.replace(/'/g, "''")}'`);
 
+  conditions.push(`${CLEAN_TIME} ~ '^[0-9]+([:.][0-9]+)*$'`);
   const where = conditions.join(" AND ");
 
   const rows = await sql.unsafe(`

@@ -35,6 +35,38 @@ def clean_swimmer_id_hash(cur: sqlite3.Cursor) -> int:
     return count
 
 
+def clean_finals_time_trailing_letters(cur: sqlite3.Cursor) -> int:
+    """
+    Strip trailing letter codes from finals_time.
+
+    The PDF parser sometimes glues the time standard onto the time value
+    (e.g. '55.80S', '2:15.50a', '1:03.43J', '24.50A', '59.52B').
+    The trailing letter is a standard code (S/A/a/B/b/J) that belongs
+    in time_standard, not in finals_time.
+    """
+    import re
+
+    cur.execute(
+        "SELECT id, finals_time FROM results "
+        "WHERE finals_time != '' AND finals_time IS NOT NULL"
+    )
+    pattern = re.compile(r'^([\d:.]+)[A-Za-z]+$')
+    updates = []
+    for row_id, ft in cur:
+        m = pattern.match(ft)
+        if m:
+            updates.append((m.group(1), row_id))
+
+    if not updates:
+        return 0
+
+    cur.executemany(
+        "UPDATE results SET finals_time = ? WHERE id = ?",
+        updates
+    )
+    return len(updates)
+
+
 def main():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
@@ -44,6 +76,9 @@ def main():
     # --- Add cleanup steps here ---
     affected = clean_swimmer_id_hash(cur)
     print(f"  swimmer_id '#' fix: {affected} rows updated")
+
+    affected = clean_finals_time_trailing_letters(cur)
+    print(f"  finals_time trailing letters fix: {affected} rows updated")
 
     conn.commit()
     conn.close()

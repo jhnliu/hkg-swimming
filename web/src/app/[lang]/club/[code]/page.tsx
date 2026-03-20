@@ -6,8 +6,6 @@ import type { Locale } from "@/lib/i18n";
 import {
   getClubSwimmers,
   getClubAnalytics,
-  formatStroke,
-  formatStrokeZh,
 } from "@/lib/db";
 import { Breadcrumb } from "@/components/breadcrumb";
 import {
@@ -172,9 +170,6 @@ export default async function ClubPage({
             <StrokeTable
               data={strokeStrength}
               lang={lang}
-              formatStroke={
-                lang === "zh" ? formatStrokeZh : formatStroke
-              }
             />
           </section>
         )}

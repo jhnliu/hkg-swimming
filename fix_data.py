@@ -81,7 +81,24 @@ def main():
             time_std_fixes += 1
     fixes["time+standard glued"] = f"{time_std_fixes} rows split"
 
-    # 7. Normalize swimmer names - for each swimmer_id, pick the longest name variant
+    # 7. Strip trailing non-numeric chars from finals_time (e.g. "55.80S" -> "55.80")
+    # These are time standard suffixes glued directly onto the time without a space
+    cur.execute("""SELECT id, finals_time FROM results
+                   WHERE finals_time != '' AND finals_time NOT IN ('NS','SCR','DQ','DNF')
+                   AND finals_time GLOB '*[0-9][a-zA-Z]*'
+                   AND finals_time NOT GLOB '*:*[a-zA-Z]*:*'""")
+    trailing_fixes = 0
+    for row_id, ft in cur.fetchall():
+        m = re.match(r'^([\d:.]+)([a-zA-Z]+)$', ft)
+        if m:
+            clean_time = m.group(1)
+            std = m.group(2)
+            cur.execute("UPDATE results SET finals_time = ?, time_standard = CASE WHEN time_standard = '' THEN ? ELSE time_standard END WHERE id = ?",
+                        (clean_time, std, row_id))
+            trailing_fixes += 1
+    fixes["trailing letter in time"] = f"{trailing_fixes} rows cleaned"
+
+    # 8. Normalize swimmer names - for each swimmer_id, pick the longest name variant
     cur.execute("""SELECT swimmer_id, swimmer_name, LENGTH(swimmer_name) as len
                    FROM results GROUP BY swimmer_id, swimmer_name ORDER BY swimmer_id, len DESC""")
     name_map = {}
