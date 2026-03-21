@@ -1,0 +1,614 @@
+{
+  "*AM": {
+    "en": "Hong Kong Sports Association for the Mentally",
+    "zh": "香港弱智人士體育協會"
+  },
+  "*BA": {
+    "en": "The Blue Angel Sports Association",
+    "zh": "藍天使體育會"
+  },
+  "*CC": {
+    "en": "Hong Kong Chi Ching Swimming Club",
+    "zh": "香港致正游泳會"
+  },
+  "*CP": {
+    "en": "Compass Sports Association",
+    "zh": "全方位體育會"
+  },
+  "*CR": {
+    "en": "Crest Ray Recreation and Sports Club",
+    "zh": "朗峰康體會"
+  },
+  "*CU": {
+    "en": "CSU Swimming Association Company Limited",
+    "zh": "中體聯游泳會有限公司"
+  },
+  "*CY": {
+    "en": "The Hong Kong Creative Youth Club",
+    "zh": "香港建青會"
+  },
+  "*EA": {
+    "en": "Elite Athletic Club",
+    "zh": "培英體育會"
+  },
+  "*ES": {
+    "en": "ESF Educational Services Limited",
+    "zh": "英基教育服務有限公司"
+  },
+  "*FB": {
+    "en": "Hong Kong Football Club",
+    "zh": "香港足球會"
+  },
+  "*FL": {
+    "en": "Fastlane Swimming Co Limited",
+    "zh": ""
+  },
+  "*GW": {
+    "en": "Giant Whale Swimming Club",
+    "zh": "巨鯨游泳會"
+  },
+  "*HN": {
+    "en": "Hoi Ngai Sports Association",
+    "zh": "海藝體育會"
+  },
+  "*KT": {
+    "en": "Kwai Tsing Recreation Club",
+    "zh": "葵青康體會"
+  },
+  "*LD": {
+    "en": "The Little Dolphin Swimming Training Centre",
+    "zh": "小海豚游泳訓練中心"
+  },
+  "*LG": {
+    "en": "LGP Sports Limited",
+    "zh": "毅智體育會有限公司"
+  },
+  "*MS": {
+    "en": "Mango Swimming Club",
+    "zh": "敏高游泳會"
+  },
+  "*ND": {
+    "en": "North District Sports Association Limited",
+    "zh": "北區體育會有限公司"
+  },
+  "*NW": {
+    "en": "New Wave Swimming Club",
+    "zh": "新浪游泳會"
+  },
+  "*SB": {
+    "en": "Sea Bear Swimming Club",
+    "zh": "海熊游泳會"
+  },
+  "*SR": {
+    "en": "SuperStar Sports Assoication",
+    "zh": "超新星體育會"
+  },
+  "*SS": {
+    "en": "Selective Swimming Club",
+    "zh": "精英游泳會"
+  },
+  "*SU": {
+    "en": "Sea Union Sports Association",
+    "zh": "凱聯體育會"
+  },
+  "*TD": {
+    "en": "Ti Dynamics Swimming Club",
+    "zh": "體藝動力游泳會"
+  },
+  "*TL": {
+    "en": "Talent Swimmers' Club",
+    "zh": "毅泳會"
+  },
+  "*TM": {
+    "en": "Tuen Mun Swimming Association",
+    "zh": "屯門游泳會"
+  },
+  "*TO": {
+    "en": "The Old Folks Swimming Association",
+    "zh": "香港保健冬泳會"
+  },
+  "*TS": {
+    "en": "Tin Shui Wai Recreation Club",
+    "zh": "天水圍體育協進會"
+  },
+  "*TT": {
+    "en": "Tuen Mun Swimming Training Centre",
+    "zh": "屯門游泳訓練中心"
+  },
+  "*WA": {
+    "en": "Winner Athletic Association",
+    "zh": "泳軒體育會"
+  },
+  "*WD": {
+    "en": "White Dolphin Sport Association",
+    "zh": "白豚體育會"
+  },
+  "*WL": {
+    "en": "Wing Land Swimming Club",
+    "zh": "泳能游泳會"
+  },
+  "*YL": {
+    "en": "Yuen Long Swimming Association",
+    "zh": "元朗游泳會"
+  },
+  "*YO": {
+    "en": "Yan Oi Tong Limited",
+    "zh": "仁愛堂有限公司"
+  },
+  "*YT": {
+    "en": "Yat Long Swimming Association",
+    "zh": "日浪游泳會"
+  },
+  "3L": {
+    "en": "3L Swim",
+    "zh": ""
+  },
+  "AD": {
+    "en": "Advance Giant Swimming Development Club",
+    "zh": "堅進動力游泳會"
+  },
+  "AG": {
+    "en": "Aqua Gym Sports Association",
+    "zh": ""
+  },
+  "AP": {
+    "en": "Sports Association for the Physically Disabled of",
+    "zh": "中國香港傷殘人士協會"
+  },
+  "AQS": {
+    "en": "Aquatic Sports Association",
+    "zh": "鯤鵬體育會"
+  },
+  "AS": {
+    "en": "Asia Sports Cooperate Association (ASCA) Limite",
+    "zh": "亞洲體育合作協會有限公司"
+  },
+  "AVO": {
+    "en": "Athletic Veterans of Hong Kong",
+    "zh": "元老會"
+  },
+  "BH": {
+    "en": "Blue Haven Swimming Club",
+    "zh": "藍灣游泳會"
+  },
+  "BS": {
+    "en": "Blue Sky Swimming Club Limited",
+    "zh": "藍天泳會有限公司"
+  },
+  "BSC": {
+    "en": "Barracuda Swimming Club",
+    "zh": ""
+  },
+  "BT": {
+    "en": "Brillant Sports Association",
+    "zh": "耀揚體育會"
+  },
+  "BWC": {
+    "en": "Blue Whale Life Guard Club",
+    "zh": "藍鯨拯溺會"
+  },
+  "CAA": {
+    "en": "The Citizen Athletic Association Limited",
+    "zh": "公民體育會有限公司"
+  },
+  "CCW": {
+    "en": "Chinese YMCA of Hong Kong Ching Wing Union",
+    "zh": "香港中華基督教青年會-青泳團"
+  },
+  "CES": {
+    "en": "City East Sports Club",
+    "zh": "城東體育會"
+  },
+  "CKW": {
+    "en": "Chi Kin Winter Swimming Club Limited",
+    "zh": "智健冬泳會有限公司"
+  },
+  "CLT": {
+    "en": "Chinese YMCA of Hong Kong Lai Tsun Swimming",
+    "zh": "香港中華基督教青年會勵進泳團"
+  },
+  "CN": {
+    "en": "Champion Athletic Association Limited",
+    "zh": "冠軍體育會"
+  },
+  "CPS": {
+    "en": "Chi Pui Swimming Club Limited",
+    "zh": "志佩游泳會有限公司"
+  },
+  "CR": {
+    "en": "Crest Ray Recreation and Sports Club",
+    "zh": "朗峰康體會"
+  },
+  "CRC": {
+    "en": "Chinese Recreation Club Hong Kong",
+    "zh": "香港中華游樂會"
+  },
+  "CRS": {
+    "en": "Candy Row Swimming Club",
+    "zh": "濼天泳會"
+  },
+  "CS": {
+    "en": "Create Star Swimming Club",
+    "zh": "創昇游泳會"
+  },
+  "CUC": {
+    "en": "Current Club Limited",
+    "zh": "巨流社有限公司"
+  },
+  "CWA": {
+    "en": "Chai Wan Swimming Association",
+    "zh": "柴灣游泳會"
+  },
+  "CWS": {
+    "en": "Chinese YMCA of Hong Kong White Shark",
+    "zh": "香港中華基督教青年會白鯊泳團"
+  },
+  "CX": {
+    "en": "Cadix Swimming Club",
+    "zh": "卡迪游泳會"
+  },
+  "CYM": {
+    "en": "Chinese YMCA of Hong Kong Swimming Union",
+    "zh": "香港中華基督教青年會中青泳團"
+  },
+  "DB": {
+    "en": "Diocesan School Old Boys' Association Limited",
+    "zh": "拔萃男書院舊生會"
+  },
+  "DLS": {
+    "en": "Hong Kong Dali Swimming Club",
+    "zh": "香港大力游泳會"
+  },
+  "DS": {
+    "en": "The Dolphins (Hong Kong) Swimming Society",
+    "zh": ""
+  },
+  "DSA": {
+    "en": "Delta Sports Association",
+    "zh": "騰達體育會"
+  },
+  "DWA": {
+    "en": "Dik Wing Association Limited",
+    "zh": "迪泳會有限公司"
+  },
+  "EBC": {
+    "en": "Everbright Waterpolo Club",
+    "zh": "永光水球會"
+  },
+  "ED": {
+    "en": "Eastern District Sports Association Limited",
+    "zh": "東區體育會有限公司"
+  },
+  "EE": {
+    "en": "Excellence Sports Association",
+    "zh": "傑青體育會"
+  },
+  "EWS": {
+    "en": "Eastern Winter Swimming Association Limited",
+    "zh": "東方冬泳會有限公司"
+  },
+  "FB": {
+    "en": "Hong Kong Football Club",
+    "zh": "香港足球會"
+  },
+  "FDL": {
+    "en": "Flying Dragon Life Guard Club",
+    "zh": "飛龍拯溺會"
+  },
+  "FFA": {
+    "en": "Hong Kong Flying Fish Athletic Association",
+    "zh": "香港飛魚體育會"
+  },
+  "FL": {
+    "en": "Fastlane Swimming Co Limited",
+    "zh": ""
+  },
+  "FWC": {
+    "en": "Hong Kong Fire Services Sports and Welfare Club",
+    "zh": "香港消防處體育福利會"
+  },
+  "GD": {
+    "en": "Golden Dolphin Sports Club",
+    "zh": "金海豚體育會"
+  },
+  "GRL": {
+    "en": "Golden River Life Saving Club",
+    "zh": "金江拯溺會"
+  },
+  "GS": {
+    "en": "Groudy Sports Club",
+    "zh": "翱天體育會"
+  },
+  "HCC": {
+    "en": "Hong Kong Country Club",
+    "zh": "香港鄉村俱樂部"
+  },
+  "HFS": {
+    "en": "Hoi Fung Swimming Club",
+    "zh": "海豐游泳會"
+  },
+  "HG": {
+    "en": "Health Guide Sports Association",
+    "zh": "健康之路體育會"
+  },
+  "HIS": {
+    "en": "Hong Kong Island Stingrays Swim Club",
+    "zh": ""
+  },
+  "HJC": {
+    "en": "The Hong Kong Jockey Club",
+    "zh": "香港賽馬會"
+  },
+  "HKP": {
+    "en": "Hong Kong Police Swimming Club",
+    "zh": "香港警察游泳會"
+  },
+  "HKU": {
+    "en": "HKUSU Swimming Club",
+    "zh": "香港大學游泳會"
+  },
+  "HMA": {
+    "en": "The Hong Kong Marlins Aquatic Club",
+    "zh": "香港優駿游泳會"
+  },
+  "HSW": {
+    "en": "Hong Kong Sportworld Association",
+    "zh": "香港世界體育會"
+  },
+  "HTA": {
+    "en": "Hoi Tin Athletic Association Limited",
+    "zh": "海天體育會有限公司"
+  },
+  "HTS": {
+    "en": "Hill Top Swimming Club Limited",
+    "zh": "雲峰游泳俱樂部有限公司"
+  },
+  "HVA": {
+    "en": "Happy Valley Athletic Association Limited",
+    "zh": "愉園體育會有限公司"
+  },
+  "JHC": {
+    "en": "Juan Hua Club",
+    "zh": "雋華會"
+  },
+  "KCD": {
+    "en": "Kowloon City District Recreation and Sports",
+    "zh": "九龍城區康樂體育促進會"
+  },
+  "KGC": {
+    "en": "Keung Sung Swimming Club Limited",
+    "zh": "強生游泳會有限公司"
+  },
+  "KHC": {
+    "en": "Kwan Hung Swimming Club Limited",
+    "zh": "群雄游泳會有限公司"
+  },
+  "KRS": {
+    "en": "Kornhill Recreation Club Swimming Committee",
+    "zh": "康怡花園俱樂部游泳委員會"
+  },
+  "KS": {
+    "en": "Kong Tai Sport Association",
+    "zh": "港體體育會"
+  },
+  "KTC": {
+    "en": "Kowloon Tong Club",
+    "zh": "九龍塘會"
+  },
+  "KTS": {
+    "en": "Kwun Tong Swimming Club Limited",
+    "zh": "觀塘游泳會有限公司"
+  },
+  "LFS": {
+    "en": "Long Fame Swimming Club",
+    "zh": "朗暉泳會"
+  },
+  "LG": {
+    "en": "LPG Sports Limited",
+    "zh": "毅智體育會有限公司"
+  },
+  "LRC": {
+    "en": "Ladies' Recreation Club",
+    "zh": ""
+  },
+  "LT": {
+    "en": "Lung Teng Sport Club",
+    "zh": "龍騰體育會"
+  },
+  "LTS": {
+    "en": "Lai Tsun Swimming Society",
+    "zh": "勵進游泳會"
+  },
+  "LWS": {
+    "en": "Lai Wa Swimming Club",
+    "zh": "麗華游泳會"
+  },
+  "MA": {
+    "en": "The Motive Association Limited",
+    "zh": "動力會有限公司"
+  },
+  "MCU": {
+    "en": "May Ching United Sports & Recreation Association Limited",
+    "zh": "美青體育康樂聯會有限公司"
+  },
+  "MSC": {
+    "en": "Mantas Swimming Club",
+    "zh": ""
+  },
+  "NSC": {
+    "en": "Hong Kong North Sports Club",
+    "zh": "港北體運會"
+  },
+  "NWC": {
+    "en": "New Waterpolo Club",
+    "zh": "新水球會"
+  },
+  "ON": {
+    "en": "Ocean Swimming Club",
+    "zh": "海洋游泳會"
+  },
+  "OS": {
+    "en": "Origin Swimming Club",
+    "zh": "啟源游泳會"
+  },
+  "PGS": {
+    "en": "Penguin Swimming Club",
+    "zh": "企鵝游泳會"
+  },
+  "PSC": {
+    "en": "Pacific Swimming Club Limited",
+    "zh": "太平洋游泳會有限公司"
+  },
+  "PT": {
+    "en": "Pro-Trinity Sports Club",
+    "zh": "展毅體育會"
+  },
+  "RF": {
+    "en": "RippleFly Swim Limited",
+    "zh": "一瀧游泳有限公司"
+  },
+  "RKC": {
+    "en": "Real Kinetic Swimming Club",
+    "zh": "全能游泳會"
+  },
+  "RSC": {
+    "en": "Riverside Swimming Club",
+    "zh": "河畔游泳會"
+  },
+  "SCA": {
+    "en": "South China Athletic Association",
+    "zh": "南華體育會"
+  },
+  "SDL": {
+    "en": "The Southern District Life Saving Club",
+    "zh": "南區拯溺會"
+  },
+  "SFC": {
+    "en": "Sword Fish Club",
+    "zh": "劍魚會"
+  },
+  "SGC": {
+    "en": "Sea-Green Swimming & Life-Saving Club",
+    "zh": "碧濤游泳拯溺會"
+  },
+  "SH": {
+    "en": "South Swimming Association",
+    "zh": "南國游泳會"
+  },
+  "SJ": {
+    "en": "Saint Joseph's College Old Boys' Association",
+    "zh": "聖若瑟書院舊生會"
+  },
+  "SLA": {
+    "en": "Sea Lion Aqua Club Limited",
+    "zh": "海獅會有限公司"
+  },
+  "SMC": {
+    "en": "Sha Mei (318) Swimming Club Limited",
+    "zh": "沙美游泳會有限公司"
+  },
+  "SN": {
+    "en": "Swimming Net-Training Centre Limited",
+    "zh": "游泳館-訓練中心有限公司"
+  },
+  "SR": {
+    "en": "SuperStar Sports Assoication",
+    "zh": "超新星體育會"
+  },
+  "STA": {
+    "en": "Satellite Swimming Association",
+    "zh": "衛星游泳會"
+  },
+  "STS": {
+    "en": "Shatin Sports Association Limited",
+    "zh": "沙田體育會有限公司"
+  },
+  "SYS": {
+    "en": "Sun Yip Swimming Club",
+    "zh": "新葉游泳俱樂部"
+  },
+  "TG": {
+    "en": "Tseung Kwan O Swimming Club",
+    "zh": "將軍澳泳會"
+  },
+  "THS": {
+    "en": "Tolo Harbour Swimming Training Society",
+    "zh": "吐露港游泳訓練學會"
+  },
+  "TK": {
+    "en": "The Kowloon Tsai Home Owners Assoication",
+    "zh": "九龍仔業主會"
+  },
+  "TMS": {
+    "en": "Tuen Mun Swimming Association",
+    "zh": "屯門游泳會"
+  },
+  "TPS": {
+    "en": "Tai Po Swimming Club",
+    "zh": "大埔游泳會"
+  },
+  "TSA": {
+    "en": "Tung Sing Athletic Association",
+    "zh": "東昇體育會"
+  },
+  "TW": {
+    "en": "Tsuen Wan Sports Association",
+    "zh": "荃灣體育會"
+  },
+  "VRC": {
+    "en": "Victoria Recreation Club",
+    "zh": "域多利遊樂會"
+  },
+  "VSC": {
+    "en": "Vincent Swimming Club",
+    "zh": "泳星游泳會"
+  },
+  "WDA": {
+    "en": "White Dolphin Sport Association",
+    "zh": "白豚體育會"
+  },
+  "WDS": {
+    "en": "Wong Tai Sin District Life Saving Society",
+    "zh": "黃大仙區拯溺會"
+  },
+  "WL": {
+    "en": "Wing Land Swimming Club",
+    "zh": "泳能游泳會"
+  },
+  "WN": {
+    "en": "Wing Tai Noi Swimming Club",
+    "zh": "永泰來游泳會"
+  },
+  "WTS": {
+    "en": "Win Tin Swimming Club Limited",
+    "zh": "泳天游泳會有限公司"
+  },
+  "WWC": {
+    "en": "Wrecks Waterpolo Club",
+    "zh": "域司水球會"
+  },
+  "WY": {
+    "en": "Wah Yan One Family Foundation Limited",
+    "zh": "華仁一家基金有限公司"
+  },
+  "YD": {
+    "en": "Yuen Long District Sports Association Limited",
+    "zh": "元朗區體育會有限公司"
+  },
+  "YLS": {
+    "en": "Yuen Long Life Saving Club",
+    "zh": "元朗拯溺會"
+  },
+  "YMC": {
+    "en": "YMCA of Hong Kong",
+    "zh": "香港基督教青年會"
+  },
+  "YW": {
+    "en": "Ying Wa College Old Boys’ Association Limited",
+    "zh": "英華書院校友會有限公司"
+  },
+  "YY": {
+    "en": "Yau Yat Chuen Garden City Club",
+    "zh": "又一村花園俱樂部"
+  }
+}
