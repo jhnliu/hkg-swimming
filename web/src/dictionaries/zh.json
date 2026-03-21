@@ -9,7 +9,8 @@
     "trends": "趨勢",
     "feedback": "意見反饋",
     "appeals": "申訴",
-    "changelog": "更新日誌"
+    "changelog": "更新日誌",
+    "team": "我的隊伍"
   },
   "home": {
     "title": "香港游泳",
@@ -142,6 +143,33 @@
     "clubDescription": "{code} 泳會——泳手名冊、獎牌統計、賽季數據及泳式分析。",
     "longCourse": "長池",
     "shortCourse": "短池"
+  },
+  "team": {
+    "title": "我的隊伍",
+    "subtitle": "在一個頁面追蹤你關注的泳手",
+    "addToTeam": "加入隊伍",
+    "removeFromTeam": "移除",
+    "addedToTeam": "已加入！",
+    "emptyTeam": "隊伍中還沒有泳手。前往泳手頁面點擊「加入隊伍」。",
+    "saveTeam": "儲存隊伍",
+    "loadTeam": "載入隊伍",
+    "teamCode": "隊伍代碼",
+    "teamCodePlaceholder": "例如 my-team-2024",
+    "teamCodeHint": "3-30個字元，小寫英文字母、數字及連字號",
+    "teamName": "隊伍名稱（選填）",
+    "teamNamePlaceholder": "例如 星期日小隊",
+    "saved": "隊伍已儲存！",
+    "loaded": "隊伍已載入！",
+    "notFound": "找不到隊伍",
+    "invalidCode": "代碼無效。請使用3-30個小寫英文字母、數字及連字號。",
+    "shareLink": "分享此連結讓其他人查看你的隊伍",
+    "clearTeam": "清除隊伍",
+    "clearConfirm": "確定要移除所有泳手嗎？",
+    "swimmers": "位泳手",
+    "codeTaken": "任何知道此代碼的人都可以覆蓋隊伍",
+    "lc": "長池",
+    "sc": "短池",
+    "noPbs": "暫無最佳成績"
   },
   "common": {
     "male": "男",

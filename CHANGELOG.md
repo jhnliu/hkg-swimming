@@ -1,5 +1,69 @@
 # Changelog
 
+## 2026-03-21 — Project restructure & leaderboard UX improvements
+
+### Leaderboard: age group & season filters as dropdowns (`web/src/app/[lang]/leaderboards/page.tsx`)
+- Replaced pill-style links with `<select>` dropdowns for age group and season filters
+- New reusable `NavSelect` client component (`web/src/components/nav-select.tsx`) handles navigation on change
+
+### Project restructure: migrations/ and parsers/ directories
+- Moved 9 database/migration scripts into `migrations/`: `build_db.py`, `migrate_to_pg.py`, `standardize_data.py`, `add_time_seconds.py`, `clean_db.py`, `fix_data.py`, `migrate_feedback.py`, `migrate_appeals.py`, `migrate_teams.py`
+- Moved 3 PDF parsing scripts into `parsers/`: `parse_results.py`, `parse_regional.py`, `parse_openwater.py`
+- Updated all internal path references to resolve correctly from subdirectories
+- Updated sync-results command to use new `parsers/` paths
+
+## 2026-03-21 — Loading skeletons & club page optimization
+
+### Loading skeletons for all pages
+- Added `loading.tsx` skeleton files for every data-heavy page: home, swimmer, competitions, clubs, club detail, trends, search, compare, feedback
+- Each skeleton mirrors the page's actual layout (stat cards, tables with alternating rows, chart placeholders, filter pills, etc.)
+- Uses `animate-pulse` with `pool-border/50` / `pool-border/30` colors matching existing skeletons
+- Previously only competition detail and leaderboards had loading states
+
+### Club page data fetch optimization (`web/src/app/[lang]/club/[code]/page.tsx`)
+- `getDictionary`, `getClubSwimmers`, and `getClubAnalytics` now run in parallel via `Promise.all` instead of sequentially
+- Eliminates waterfall of 3 serial awaits before any content renders
+
+## 2026-03-21 — Leaderboard competition type filter & club swimmer dedup
+
+### Leaderboard: Local vs Masters toggle (`web/src/app/[lang]/leaderboards/page.tsx`, `web/src/lib/db.ts`)
+- Added `compType` search param and pill toggle to filter leaderboard by competition type (All / Local / Masters)
+- Leverages existing `competition_type` column in the database
+- Filter propagated through event/filter URL helpers and included in cache key
+- Active filter shown as badge in section header
+- Full EN/ZH bilingual support (Local=本地, Masters=先進)
+
+### Club page: fix duplicate swimmer keys (`web/src/lib/db.ts`)
+- `getClubSwimmers` now uses `DISTINCT ON (swimmer_id)` instead of `GROUP BY swimmer_id, swimmer_name, gender`
+- Picks the most recent name/gender per swimmer, eliminating duplicate keys when a swimmer's name or gender varies across results
+
+## 2026-03-21 — My Team
+
+### My Team feature
+- Users can build a personal watchlist of swimmers — no account required
+- "Add to team" button on every swimmer profile page
+- Team page (`/team`) shows all tracked swimmers with their top 5 personal bests
+- Team stored in browser localStorage for instant, zero-setup use
+- Optionally save/load with a custom team code (e.g. `chan-family`) for sharing across devices
+- Shareable link: `/team?code=your-code` lets others load the same roster
+- Nav bar shows swimmer count badge when team is non-empty
+- Full EN/ZH bilingual support
+- Database: new `teams` table (code, name, swimmer_ids); migration in `migrate_teams.py`
+- API: `GET/PUT /api/team/[code]`, `POST /api/team/swimmers` for batch swimmer summaries
+
+## 2026-03-21 — Pre-computed time_seconds column
+
+### Database: `time_seconds` column (`build_db.py`, `migrate_to_pg.py`, `add_time_seconds.py`)
+- Added `time_seconds` (REAL/DOUBLE PRECISION) column to the results table
+- Pre-computed at import time by parsing `finals_time` strings (e.g. `1:23.45` → `83.45`)
+- Populated for all rows with a parseable time format
+- Replaces expensive per-query `TIME_TO_SECONDS` SQL expression that used regex + string splitting on every row
+
+### Leaderboard & query performance (`web/src/lib/db.ts`)
+- Removed `CLEAN_TIME` and `TIME_TO_SECONDS` SQL fragments — all queries now read the pre-computed `time_seconds` column directly
+- Added partial index `(stroke, distance, course, time_seconds) WHERE time_seconds IS NOT NULL` for fast leaderboard sorting
+- Affected queries: leaderboard, personal bests, time history, head-to-head comparison, biggest improvers
+
 ## 2026-03-21 — SEO, Appeals, Club Names & Data Reorganization
 
 ### SEO & Open Graph (`web/src/lib/seo.ts`)
@@ -51,14 +115,23 @@
 - Added `docs/DATABASE_SCHEMA.md` — Neon PostgreSQL schema reference
 - Added `docs/DATA_PIPELINE.md` — end-to-end data flow documentation
 
-## 2026-03-21 — Open Water Competition Scraper
+## 2026-03-21 — Open Water Competition Scraper & Parser
 
 ### New scraper (`scrape_openwater.py`)
 - Scrapes open water swimming result PDFs from `hkgswimming.org.hk/zh-hant/activities/134/`
 - 8 events available (2022/23 – 2025/26 seasons), 1 PDF each
 - PDFs contain structured results: swimmer IDs, names, teams, times, ranks (similar to HY-TEK but different event header format)
 - Saved to `data/pdf/openwater/`
-- Note: existing `parse_results.py` cannot parse these yet — event headers use open water format (`5km Open Water` vs `5000 LC Meter Freestyle`)
+### New parser (`parse_openwater.py`)
+- Parses open water result PDFs into CSVs matching the existing data schema
+- Handles event headers: `Event 3 Men 14-17 5km Open Water`, `Event 1 Men 14 or above 10km Open Water`
+- Two column layouts: `Order Cap Reg Name Team Result Rank` and `Rank Cap Reg Name Team Result`
+- Swimmer IDs with varied suffix codes (IAZ, B, #B, @IAX, IAZN, #@P) parsed correctly
+- Names with and without commas handled (`Wang, Yi Shun` and `Sin Chin Ting Keith`)
+- Special statuses: DNF, NS, OTL, DQ, DSQ
+- Course set to `OW` (Open Water)
+- Relay events (4x800m) skipped
+- **453 results** parsed from 8 PDFs (2022/23–2025/26 seasons)
 
 ### Updated `/sync-results` command
 - Added step 4 for open water competition sync

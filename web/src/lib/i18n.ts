@@ -27,6 +27,7 @@ export interface Dict {
     feedback: string;
     appeals: string;
     changelog: string;
+    team: string;
   };
   home: {
     title: string;
@@ -159,6 +160,33 @@ export interface Dict {
     clubDescription: string;
     longCourse: string;
     shortCourse: string;
+  };
+  team: {
+    title: string;
+    subtitle: string;
+    addToTeam: string;
+    removeFromTeam: string;
+    addedToTeam: string;
+    emptyTeam: string;
+    saveTeam: string;
+    loadTeam: string;
+    teamCode: string;
+    teamCodePlaceholder: string;
+    teamCodeHint: string;
+    teamName: string;
+    teamNamePlaceholder: string;
+    saved: string;
+    loaded: string;
+    notFound: string;
+    invalidCode: string;
+    shareLink: string;
+    clearTeam: string;
+    clearConfirm: string;
+    swimmers: string;
+    codeTaken: string;
+    lc: string;
+    sc: string;
+    noPbs: string;
   };
   common: {
     male: string;

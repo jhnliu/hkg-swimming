@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { unstable_cache } from "next/cache";
 import clubNamesData from "./club-names.json";
 
 const sql = neon(process.env.DATABASE_URL!);
@@ -90,32 +91,8 @@ export interface PersonalBest {
   place?: number | null;
 }
 
-// --- Time conversion SQL fragment for Postgres ---
-
-// Strip trailing non-numeric chars (e.g. "55.80S" -> "55.80") before parsing
-const CLEAN_TIME = `REGEXP_REPLACE(finals_time, '[^0-9:.]+$', '')`;
-
-const TIME_TO_SECONDS = `
-  CASE
-    WHEN ${CLEAN_TIME} ~ '^[0-9]+:[0-9]+:[0-9.]+$' THEN
-      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 1) AS DOUBLE PRECISION) * 3600 +
-      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 2) AS DOUBLE PRECISION) * 60 +
-      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 3) AS DOUBLE PRECISION)
-    WHEN ${CLEAN_TIME} ~ '^[0-9]+:[0-9.]+$' THEN
-      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 1) AS DOUBLE PRECISION) * 60 +
-      CAST(SPLIT_PART(${CLEAN_TIME}, ':', 2) AS DOUBLE PRECISION)
-    WHEN ${CLEAN_TIME} ~ '^[0-9.]+$' THEN
-      CAST(${CLEAN_TIME} AS DOUBLE PRECISION)
-    ELSE NULL
-  END
-`;
-
-const VALID_TIME_FILTER = `
-  finals_time != '' AND finals_time IS NOT NULL
-  AND time_standard NOT IN ('SCR', 'DQ', 'DNF', 'NS', '')
-  AND stroke NOT LIKE '%Relay%'
-  AND ${CLEAN_TIME} ~ '^[0-9]+([:.][0-9]+)*$'
-`;
+// Valid competitive time: has a parsed time, not a DQ/scratch, not a relay
+const VALID_TIME_FILTER = `time_seconds IS NOT NULL AND time_standard NOT IN ('SCR', 'DQ', 'DNF', 'NS') AND stroke NOT LIKE '%Relay%'`;
 
 // --- Queries ---
 
@@ -271,7 +248,7 @@ export interface TimePoint {
 export async function getSwimmerTimeHistory(swimmerId: string): Promise<TimePoint[]> {
   const rows = await sql`
     SELECT date, finals_time as time,
-      ${sql.unsafe(TIME_TO_SECONDS)} as time_seconds,
+      time_seconds,
       distance || 'm ' || stroke || ' ' || course as event_label,
       competition_name
     FROM results
@@ -291,13 +268,13 @@ export async function getSwimmerPersonalBests(
     SELECT DISTINCT ON (distance, stroke, course)
       swimmer_id, swimmer_name, club, distance, stroke, course,
       finals_time as time,
-      ${sql.unsafe(TIME_TO_SECONDS)} as time_seconds,
+      time_seconds,
       date, age, competition_id, competition_name, place
     FROM results
     WHERE swimmer_id = ${swimmerId}
       AND ${sql.unsafe(VALID_TIME_FILTER)}
       ${sql.unsafe(courseFilter)}
-    ORDER BY distance, stroke, course, ${sql.unsafe(TIME_TO_SECONDS)} ASC
+    ORDER BY distance, stroke, course, time_seconds ASC
   `;
   return rows as PersonalBest[];
 }
@@ -320,13 +297,73 @@ export async function getSwimmerStats(swimmerId: string) {
   };
 }
 
+// --- Team / batch swimmer queries ---
+
+export interface SwimmerSummary {
+  id: string;
+  name: string;
+  gender: string;
+  club: string;
+  pbs: { distance: string; stroke: string; course: string; time: string }[];
+}
+
+export async function getSwimmersSummary(ids: string[]): Promise<SwimmerSummary[]> {
+  if (ids.length === 0) return [];
+
+  const escaped = ids.map((id) => `'${id.replace(/'/g, "''")}'`).join(",");
+
+  const [swimmers, pbs] = await Promise.all([
+    sql`${sql.unsafe(`
+      SELECT DISTINCT ON (swimmer_id)
+        swimmer_id as id, swimmer_name as name, gender, club
+      FROM results
+      WHERE swimmer_id IN (${escaped})
+      ORDER BY swimmer_id, date DESC
+    `)}`,
+    sql`${sql.unsafe(`
+      SELECT DISTINCT ON (swimmer_id, distance, stroke, course)
+        swimmer_id, distance, stroke, course, finals_time as time, time_seconds
+      FROM results
+      WHERE swimmer_id IN (${escaped})
+        AND ${VALID_TIME_FILTER}
+      ORDER BY swimmer_id, distance, stroke, course, time_seconds ASC
+    `)}`,
+  ]);
+
+  const pbsBySwimmer = new Map<string, typeof pbs>();
+  for (const pb of pbs) {
+    const id = pb.swimmer_id as string;
+    if (!pbsBySwimmer.has(id)) pbsBySwimmer.set(id, []);
+    pbsBySwimmer.get(id)!.push(pb);
+  }
+
+  return (swimmers as Record<string, unknown>[]).map((s) => {
+    const swimmerPbs = pbsBySwimmer.get(s.id as string) || [];
+    // Sort by time_seconds, take top 5
+    swimmerPbs.sort((a, b) => (a.time_seconds as number) - (b.time_seconds as number));
+    return {
+      id: s.id as string,
+      name: s.name as string,
+      gender: s.gender as string,
+      club: s.club as string,
+      pbs: swimmerPbs.slice(0, 5).map((p) => ({
+        distance: p.distance as string,
+        stroke: p.stroke as string,
+        course: p.course as string,
+        time: p.time as string,
+      })),
+    };
+  });
+}
+
 export interface LeaderboardFilters {
   gender?: string;
   ageGroup?: string;
   season?: string;
+  compType?: string;
 }
 
-export async function getLeaderboard(
+async function _getLeaderboard(
   eventKey: string,
   limit: number = 20,
   filters: LeaderboardFilters = {}
@@ -354,6 +391,10 @@ export async function getLeaderboard(
     }
   }
 
+  if (filters.compType) {
+    conditions.push(`competition_type = '${filters.compType.replace(/'/g, "''")}'`);
+  }
+
   const where = conditions.join(" AND ");
 
   const rows = await sql`${sql.unsafe(`
@@ -361,12 +402,12 @@ export async function getLeaderboard(
       SELECT DISTINCT ON (swimmer_id)
         swimmer_id, swimmer_name, club, distance, stroke, course,
         finals_time as time,
-        ${TIME_TO_SECONDS} as time_seconds,
+        time_seconds,
         date, age, competition_id
       FROM results
       WHERE ${where}
-        AND ${VALID_TIME_FILTER.trim()}
-      ORDER BY swimmer_id, ${TIME_TO_SECONDS} ASC
+        AND ${VALID_TIME_FILTER}
+      ORDER BY swimmer_id, time_seconds ASC
     )
     SELECT * FROM best_times
     ORDER BY time_seconds
@@ -375,48 +416,78 @@ export async function getLeaderboard(
   return rows as unknown as PersonalBest[];
 }
 
-export async function getLeaderboardFilterOptions(): Promise<{
-  genders: string[];
-  ageGroups: string[];
-  seasons: string[];
-}> {
-  const [ageGroups, seasons] = await Promise.all([
-    sql`SELECT DISTINCT age_group FROM results WHERE age_group != '' AND stroke NOT LIKE '%Relay%' ORDER BY age_group`,
-    sql`
-      SELECT DISTINCT
-        CASE WHEN CAST(SUBSTRING(date FROM 6 FOR 2) AS INTEGER) >= 7
-          THEN SUBSTRING(date FROM 1 FOR 4) || '-' || (CAST(SUBSTRING(date FROM 1 FOR 4) AS INTEGER) + 1)
-          ELSE (CAST(SUBSTRING(date FROM 1 FOR 4) AS INTEGER) - 1) || '-' || SUBSTRING(date FROM 1 FOR 4)
-        END as season
+export async function getLeaderboard(
+  eventKey: string,
+  limit: number = 20,
+  filters: LeaderboardFilters = {}
+): Promise<PersonalBest[]> {
+  const cacheKey = [
+    "leaderboard",
+    eventKey,
+    String(limit),
+    filters.gender || "",
+    filters.ageGroup || "",
+    filters.season || "",
+    filters.compType || "",
+  ];
+  const cached = unstable_cache(
+    () => _getLeaderboard(eventKey, limit, filters),
+    cacheKey,
+    { revalidate: 300 }
+  );
+  return cached();
+}
+
+export const getLeaderboardFilterOptions = unstable_cache(
+  async (): Promise<{
+    genders: string[];
+    ageGroups: string[];
+    seasons: string[];
+  }> => {
+    const [ageGroups, seasons] = await Promise.all([
+      sql`SELECT DISTINCT age_group FROM results WHERE age_group != '' AND stroke NOT LIKE '%Relay%' ORDER BY age_group`,
+      sql`
+        SELECT DISTINCT
+          CASE WHEN CAST(SUBSTRING(date FROM 6 FOR 2) AS INTEGER) >= 7
+            THEN SUBSTRING(date FROM 1 FOR 4) || '-' || (CAST(SUBSTRING(date FROM 1 FOR 4) AS INTEGER) + 1)
+            ELSE (CAST(SUBSTRING(date FROM 1 FOR 4) AS INTEGER) - 1) || '-' || SUBSTRING(date FROM 1 FOR 4)
+          END as season
+        FROM results
+        WHERE date != ''
+        ORDER BY season DESC
+      `,
+    ]);
+
+    return {
+      genders: ["Male", "Female"],
+      ageGroups: ageGroups.map((r) => r.age_group as string),
+      seasons: seasons.map((r) => r.season as string),
+    };
+  },
+  ["leaderboard-filter-options"],
+  { revalidate: 3600 }
+);
+
+export const getLeaderboardEventKeys = unstable_cache(
+  async (): Promise<string[]> => {
+    const rows = await sql`
+      SELECT DISTINCT stroke || '_' || distance || '_' || course as event_key
       FROM results
-      WHERE date != ''
-      ORDER BY season DESC
-    `,
-  ]);
-
-  return {
-    genders: ["Male", "Female"],
-    ageGroups: ageGroups.map((r) => r.age_group as string),
-    seasons: seasons.map((r) => r.season as string),
-  };
-}
-
-export async function getLeaderboardEventKeys(): Promise<string[]> {
-  const rows = await sql`
-    SELECT DISTINCT stroke || '_' || distance || '_' || course as event_key
-    FROM results
-    WHERE ${sql.unsafe(VALID_TIME_FILTER)}
-    ORDER BY event_key
-  `;
-  // Sort by distance numerically
-  return (rows as { event_key: string }[])
-    .map((r) => r.event_key)
-    .sort((a, b) => {
-      const [, da] = a.split("_");
-      const [, db] = b.split("_");
-      return parseInt(da) - parseInt(db) || a.localeCompare(b);
-    });
-}
+      WHERE time_seconds IS NOT NULL
+      ORDER BY event_key
+    `;
+    // Sort by distance numerically
+    return (rows as { event_key: string }[])
+      .map((r) => r.event_key)
+      .sort((a, b) => {
+        const [, da] = a.split("_");
+        const [, db] = b.split("_");
+        return parseInt(da) - parseInt(db) || a.localeCompare(b);
+      });
+  },
+  ["leaderboard-event-keys"],
+  { revalidate: 3600 }
+);
 
 export async function getClubs(): Promise<{ code: string; name_en: string; name_zh: string; swimmer_count: number }[]> {
   const rows = await sql`
@@ -437,11 +508,14 @@ export async function getClubSwimmers(
   clubCode: string
 ): Promise<{ id: string; name: string; gender: string }[]> {
   const rows = await sql`
-    SELECT swimmer_id as id, swimmer_name as name, gender
-    FROM results
-    WHERE club = ${clubCode}
-    GROUP BY swimmer_id, swimmer_name, gender
-    ORDER BY swimmer_name
+    SELECT id, name, gender FROM (
+      SELECT DISTINCT ON (swimmer_id)
+        swimmer_id as id, swimmer_name as name, gender, date
+      FROM results
+      WHERE club = ${clubCode}
+      ORDER BY swimmer_id, date DESC
+    ) sub
+    ORDER BY name
   `;
   return rows as { id: string; name: string; gender: string }[];
 }
@@ -473,14 +547,19 @@ export async function search(query: string, limit: number = 30): Promise<SearchR
   const nameConditions = words.map((w) => `REPLACE(swimmer_name, ',', '') ILIKE '%${w.replace(/'/g, "''")}%'`).join(" AND ");
 
   const swimmers = await sql`
-    SELECT swimmer_id as id, swimmer_name as name, club, gender,
-      MAX(date) as last_date, COUNT(*) as result_count
+    SELECT DISTINCT ON (swimmer_id)
+      swimmer_id as id, swimmer_name as name, club, gender,
+      MAX(date) OVER (PARTITION BY swimmer_id) as last_date,
+      COUNT(*) OVER (PARTITION BY swimmer_id) as result_count
     FROM results
     WHERE (${sql.unsafe(nameConditions)}) OR swimmer_id ILIKE ${pattern}
-    GROUP BY swimmer_id, swimmer_name, club, gender
-    ORDER BY MAX(date) DESC
-    LIMIT ${limit}
+    ORDER BY swimmer_id, date DESC
   `;
+  // Re-sort by last_date and apply limit
+  swimmers.sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
+    (b.last_date as string).localeCompare(a.last_date as string)
+  );
+  swimmers.splice(limit);
 
   for (const s of swimmers) {
     results.push({
@@ -556,14 +635,17 @@ export async function searchSwimmers(
   const nameConditions = words.map((w) => `REPLACE(swimmer_name, ',', '') ILIKE '%${w.replace(/'/g, "''")}%'`).join(" AND ");
 
   const rows = await sql`
-    SELECT swimmer_id as id, swimmer_name as name, club
+    SELECT DISTINCT ON (swimmer_id)
+      swimmer_id as id, swimmer_name as name, club,
+      MAX(date) OVER (PARTITION BY swimmer_id) as last_date
     FROM results
     WHERE (${sql.unsafe(nameConditions)}) OR swimmer_id ILIKE ${pattern}
-    GROUP BY swimmer_id, swimmer_name, club
-    ORDER BY MAX(date) DESC
-    LIMIT ${limit}
+    ORDER BY swimmer_id, date DESC
   `;
-  return rows as { id: string; name: string; club: string }[];
+  rows.sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
+    (b.last_date as string).localeCompare(a.last_date as string)
+  );
+  return (rows as { id: string; name: string; club: string }[]).slice(0, limit);
 }
 
 // --- Compare queries ---
@@ -586,20 +668,20 @@ export async function getHeadToHead(
     WITH pb1 AS (
       SELECT DISTINCT ON (distance, stroke, course)
         distance, stroke, course, finals_time as time,
-        ${sql.unsafe(TIME_TO_SECONDS)} as time_seconds
+        time_seconds
       FROM results
       WHERE swimmer_id = ${id1}
-        AND ${sql.unsafe(VALID_TIME_FILTER)}
-      ORDER BY distance, stroke, course, ${sql.unsafe(TIME_TO_SECONDS)} ASC
+        AND time_seconds IS NOT NULL
+      ORDER BY distance, stroke, course, time_seconds ASC
     ),
     pb2 AS (
       SELECT DISTINCT ON (distance, stroke, course)
         distance, stroke, course, finals_time as time,
-        ${sql.unsafe(TIME_TO_SECONDS)} as time_seconds
+        time_seconds
       FROM results
       WHERE swimmer_id = ${id2}
-        AND ${sql.unsafe(VALID_TIME_FILTER)}
-      ORDER BY distance, stroke, course, ${sql.unsafe(TIME_TO_SECONDS)} ASC
+        AND time_seconds IS NOT NULL
+      ORDER BY distance, stroke, course, time_seconds ASC
     )
     SELECT pb1.distance, pb1.stroke, pb1.course,
       pb1.time as swimmer1_time, pb1.time_seconds as swimmer1_seconds,
@@ -642,10 +724,7 @@ export async function getBiggestImprovers(
   filters: ImproverFilters = {}
 ): Promise<Improver[]> {
   const conditions: string[] = [
-    "finals_time != ''",
-    "finals_time IS NOT NULL",
-    "time_standard NOT IN ('SCR', 'DQ', 'DNF', 'NS', '')",
-    "stroke NOT LIKE '%Relay%'",
+    "time_seconds IS NOT NULL",
     "date >= (CURRENT_DATE - INTERVAL '12 months')::TEXT",
   ];
 
@@ -655,14 +734,13 @@ export async function getBiggestImprovers(
   else if (filters.gender === "Female") conditions.push("gender IN ('Women', 'Girls')");
   if (filters.club) conditions.push(`club = '${filters.club.replace(/'/g, "''")}'`);
 
-  conditions.push(`${CLEAN_TIME} ~ '^[0-9]+([:.][0-9]+)*$'`);
   const where = conditions.join(" AND ");
 
   const rows = await sql`${sql.unsafe(`
     WITH recent AS (
       SELECT swimmer_id, swimmer_name, club, distance, stroke, course, gender,
         finals_time, date,
-        ${TIME_TO_SECONDS} as time_seconds
+        time_seconds
       FROM results
       WHERE ${where}
     ),

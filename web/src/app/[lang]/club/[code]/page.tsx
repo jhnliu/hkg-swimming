@@ -45,11 +45,13 @@ export default async function ClubPage({
   const { lang, code } = await params;
   if (!isLocale(lang)) notFound();
 
-  const dict = await getDictionary(lang as Locale);
-  const swimmers = await getClubSwimmers(code);
+  const [dict, swimmers, analytics] = await Promise.all([
+    getDictionary(lang as Locale),
+    getClubSwimmers(code),
+    getClubAnalytics(code),
+  ]);
   if (swimmers.length === 0) notFound();
 
-  const analytics = await getClubAnalytics(code);
   const { totals, seasonStats, strokeStrength } = analytics;
 
   const maleCount = swimmers.filter(
@@ -70,12 +72,12 @@ export default async function ClubPage({
             { label: clubName !== code ? clubName : code },
           ]}
         />
-        <h1 className="text-3xl font-bold text-foreground">
-          <span className="mr-3 rounded bg-pool-surface px-3 py-1 font-mono text-2xl dark:bg-surface-alt">
+        <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-foreground sm:text-3xl">
+          <span className="rounded bg-pool-surface px-2.5 py-0.5 font-mono text-xl dark:bg-surface-alt sm:text-2xl">
             {code}
           </span>
           {clubName !== code && (
-            <span className="text-xl font-medium text-foreground/70">
+            <span className="text-lg font-medium text-foreground/70 sm:text-xl">
               {clubName}
             </span>
           )}
@@ -85,7 +87,7 @@ export default async function ClubPage({
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="depth-card rounded-lg border border-pool-border bg-surface p-4 dark:border-pool-border dark:bg-surface">
-          <div className="text-2xl font-bold text-foreground">
+          <div className="text-lg font-bold text-foreground sm:text-2xl">
             {totals.total_swimmers.toLocaleString()}
           </div>
           <div className="text-sm text-muted dark:text-pool-light/60">
@@ -93,7 +95,7 @@ export default async function ClubPage({
           </div>
         </div>
         <div className="depth-card rounded-lg border border-pool-border bg-surface p-4 dark:border-pool-border dark:bg-surface">
-          <div className="text-2xl font-bold text-foreground">
+          <div className="text-lg font-bold text-foreground sm:text-2xl">
             {totals.total_competitions.toLocaleString()}
           </div>
           <div className="text-sm text-muted dark:text-pool-light/60">
@@ -101,7 +103,7 @@ export default async function ClubPage({
           </div>
         </div>
         <div className="depth-card rounded-lg border border-pool-border bg-surface p-4 dark:border-pool-border dark:bg-surface">
-          <div className="text-2xl font-bold text-foreground">
+          <div className="text-lg font-bold text-foreground sm:text-2xl">
             {totals.total_results.toLocaleString()}
           </div>
           <div className="text-sm text-muted dark:text-pool-light/60">
@@ -109,7 +111,7 @@ export default async function ClubPage({
           </div>
         </div>
         <div className="depth-card rounded-lg border border-pool-border bg-surface p-4 dark:border-pool-border dark:bg-surface">
-          <div className="flex items-center gap-1.5 text-2xl font-bold">
+          <div className="flex items-center gap-1.5 text-lg font-bold sm:text-2xl">
             <span className="text-yellow-500">{totals.total_gold}</span>
             <span className="text-muted/40">/</span>
             <span className="text-muted/40">{totals.total_silver}</span>
@@ -207,7 +209,7 @@ export default async function ClubPage({
                 <th className="px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light">
                   {dict.leaderboard.gender}
                 </th>
-                <th className="px-3 py-2 text-left font-semibold text-pool-deep dark:text-pool-light">
+                <th className="hidden px-3 py-2 text-left font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                   ID
                 </th>
               </tr>
@@ -233,7 +235,7 @@ export default async function ClubPage({
                       ? dict.common.male
                       : dict.common.female}
                   </td>
-                  <td className="px-3 py-2 font-mono text-xs text-muted/60 dark:text-pool-light/40">
+                  <td className="hidden px-3 py-2 font-mono text-xs text-muted/60 dark:text-pool-light/40 sm:table-cell">
                     {s.id}
                   </td>
                 </tr>

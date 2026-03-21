@@ -137,7 +137,7 @@ export default async function TrendsPage({
             ))}
           </div>
 
-          <span className="text-pool-border dark:text-pool-border">|</span>
+          <span className="hidden text-pool-border dark:text-pool-border sm:inline">|</span>
 
           {/* Course */}
           <div className="flex items-center gap-1">
@@ -166,7 +166,7 @@ export default async function TrendsPage({
             ))}
           </div>
 
-          <span className="text-pool-border dark:text-pool-border">|</span>
+          <span className="hidden text-pool-border dark:text-pool-border sm:inline">|</span>
 
           {/* Gender */}
           <div className="flex items-center gap-1">
@@ -197,7 +197,7 @@ export default async function TrendsPage({
 
           {hasFilters && (
             <>
-              <span className="text-pool-border dark:text-pool-border">|</span>
+              <span className="hidden text-pool-border dark:text-pool-border sm:inline">|</span>
               <Link
                 href={`/${lang}/trends`}
                 className="rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
@@ -217,28 +217,28 @@ export default async function TrendsPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-pool-border bg-pool-surface dark:border-pool-border dark:bg-surface-alt">
-                  <th className="w-10 px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="w-8 px-2 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light sm:w-10 sm:px-3">
                     #
                   </th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="px-2 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                     {dict.common.name}
                   </th>
-                  <th className="px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {dict.common.team}
                   </th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {lang === "en" ? "Event" : "項目"}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {lang === "en" ? "Before" : "之前"}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {lang === "en" ? "After" : "之後"}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="px-2 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                     {lang === "en" ? "Drop" : "進步"}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {lang === "en" ? "Over" : "歷時"}
                   </th>
                 </tr>
@@ -253,18 +253,32 @@ export default async function TrendsPage({
                         i % 2 === 1 ? "bg-pool-surface/50 dark:bg-surface-alt/30" : ""
                       }`}
                     >
-                      <td className="px-3 py-2 text-center text-muted dark:text-pool-light/60">
+                      <td className="px-2 py-2 text-center text-muted dark:text-pool-light/60 sm:px-3">
                         {i + 1}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2 sm:px-3">
                         <Link
                           href={`/${lang}/swimmer/${encodeURIComponent(imp.swimmer_id)}`}
                           className="font-medium text-pool-mid hover:text-pool-deep dark:text-pool-light dark:hover:text-white"
                         >
                           {imp.swimmer_name}
                         </Link>
+                        <div className="mt-0.5 text-xs text-muted dark:text-pool-light/50 sm:hidden">
+                          <Link
+                            href={`/${lang}/club/${imp.club}`}
+                            className="hover:text-pool-mid dark:hover:text-pool-light"
+                          >
+                            {imp.club}
+                          </Link>
+                          {" · "}
+                          {imp.distance}m{" "}
+                          {lang === "zh"
+                            ? formatStrokeZh(imp.stroke)
+                            : formatStroke(imp.stroke)}{" "}
+                          {imp.course}
+                        </div>
                       </td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="hidden px-3 py-2 text-center sm:table-cell">
                         <Link
                           href={`/${lang}/club/${imp.club}`}
                           className="font-medium text-foreground/80 hover:text-pool-mid dark:hover:text-pool-light"
@@ -273,20 +287,20 @@ export default async function TrendsPage({
                           {imp.club}
                         </Link>
                       </td>
-                      <td className="px-3 py-2 text-foreground">
+                      <td className="hidden px-3 py-2 text-foreground sm:table-cell">
                         {imp.distance}m{" "}
                         {lang === "zh"
                           ? formatStrokeZh(imp.stroke)
                           : formatStroke(imp.stroke)}{" "}
                         <span className="text-xs text-muted/60">{imp.course}</span>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-muted timing-display dark:text-pool-light/60">
+                      <td className="hidden px-3 py-2 text-right font-mono text-muted timing-display dark:text-pool-light/60 sm:table-cell">
                         <span title={imp.old_date}>{imp.old_time}</span>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono font-medium text-foreground timing-display">
+                      <td className="hidden px-3 py-2 text-right font-mono font-medium text-foreground timing-display sm:table-cell">
                         <span title={imp.new_date}>{imp.new_time}</span>
                       </td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-2 py-2 text-right sm:px-3">
                         <span className="font-medium text-emerald-600 dark:text-emerald-400">
                           -{imp.improvement_pct}%
                         </span>
@@ -294,7 +308,7 @@ export default async function TrendsPage({
                           ({timeDrop.toFixed(2)}s)
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-right text-muted dark:text-pool-light/60">
+                      <td className="hidden px-3 py-2 text-right text-muted dark:text-pool-light/60 sm:table-cell">
                         {formatDuration(imp.days_between, lang as "en" | "zh")}
                       </td>
                     </tr>
@@ -326,25 +340,25 @@ export default async function TrendsPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-pool-border bg-pool-surface dark:border-pool-border dark:bg-surface-alt">
-                  <th className="px-3 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="px-2 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                     {dict.common.name}
                   </th>
-                  <th className="px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {dict.common.team}
                   </th>
-                  <th className="px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {dict.swimmer.age}
                   </th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {lang === "en" ? "Event" : "項目"}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="px-2 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                     {dict.swimmer.time}
                   </th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light">
-                    {lang === "en" ? "Qualified For" : "達標項目"}
+                  <th className="px-2 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light sm:px-3">
+                    {lang === "en" ? "Standard" : "達標"}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {dict.swimmer.date}
                   </th>
                 </tr>
@@ -361,15 +375,29 @@ export default async function TrendsPage({
                         i % 2 === 1 ? "bg-pool-surface/50 dark:bg-surface-alt/30" : ""
                       }`}
                     >
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2 sm:px-3">
                         <Link
                           href={`/${lang}/swimmer/${encodeURIComponent(b.swimmer_id)}`}
                           className="font-medium text-pool-mid hover:text-pool-deep dark:text-pool-light dark:hover:text-white"
                         >
                           {b.swimmer_name}
                         </Link>
+                        <div className="mt-0.5 text-xs text-muted dark:text-pool-light/50 sm:hidden">
+                          <Link
+                            href={`/${lang}/club/${b.club}`}
+                            className="hover:text-pool-mid dark:hover:text-pool-light"
+                          >
+                            {b.club}
+                          </Link>
+                          {" · "}
+                          {b.distance}m{" "}
+                          {lang === "zh"
+                            ? formatStrokeZh(b.stroke)
+                            : formatStroke(b.stroke)}{" "}
+                          {b.course}
+                        </div>
                       </td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="hidden px-3 py-2 text-center sm:table-cell">
                         <Link
                           href={`/${lang}/club/${b.club}`}
                           className="font-medium text-foreground/80 hover:text-pool-mid dark:hover:text-pool-light"
@@ -378,28 +406,28 @@ export default async function TrendsPage({
                           {b.club}
                         </Link>
                       </td>
-                      <td className="px-3 py-2 text-center text-muted dark:text-pool-light/60">
+                      <td className="hidden px-3 py-2 text-center text-muted dark:text-pool-light/60 sm:table-cell">
                         {b.age}
                       </td>
-                      <td className="px-3 py-2 text-foreground">
+                      <td className="hidden px-3 py-2 text-foreground sm:table-cell">
                         {b.distance}m{" "}
                         {lang === "zh"
                           ? formatStrokeZh(b.stroke)
                           : formatStroke(b.stroke)}{" "}
                         <span className="text-xs text-muted/60">{b.course}</span>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono font-medium text-foreground timing-display">
+                      <td className="px-2 py-2 text-right font-mono font-medium text-foreground timing-display sm:px-3">
                         {b.finals_time}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2 sm:px-3">
                         <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
                           {b.time_standard}
                         </span>
-                        <span className="ml-2 text-xs text-muted dark:text-pool-light/60">
+                        <span className="ml-2 hidden text-xs text-muted dark:text-pool-light/60 sm:inline">
                           {stdLabel}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-right text-muted dark:text-pool-light/60">
+                      <td className="hidden px-3 py-2 text-right text-muted dark:text-pool-light/60 sm:table-cell">
                         {b.date}
                       </td>
                     </tr>

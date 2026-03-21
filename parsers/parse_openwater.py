@@ -84,14 +84,18 @@ def parse_event_header(line):
 # Format 2 (1.5km): "Rank Cap Reg Name Team Result"
 #   1 34 35022 IAZ Ip, Ali TPS 17:32.6
 
-# Common pattern: a line starting with numbers, containing a swimmer ID, name, team, time, and optionally rank
+# Result line pattern. Handles two layouts:
+# Format A (has Order+Cap): "28 2 48237 IAZ Wang, Yi Shun CPS 1:01:12.7 1"
+# Format B (no cap):        "32 03439 IAZ Sin Chin Ting Keith SCA 1:58:32.1 1"
+# Format C (rank first):    "1 34 35022 IAZ Ip, Ali TPS 17:32.6"
 RESULT_RE = re.compile(
-    r"^(\d+)\s+"                                   # first number (order or rank)
-    r"(\d+)\s+"                                    # cap number
-    r"(\d{4,5}\s*[#@^A-Z0-9 ]*?)\s+"              # reg number (swimmer ID)
-    r"([A-Z][a-z].+?)\s+"                          # name
-    r"(\*?[A-Z]{2,4})\s+"                          # team
-    r"(.+)$"                                       # result + optional rank
+    r"^(\d+)\s+"                                    # first number (order or rank)
+    r"(?:(\d+)\s+)?"                                # optional second number (cap)
+    r"(\d{4,5})\s+"                                 # reg number (swimmer ID)
+    r"([#@]*[A-Z0-9]+\s+)?"                         # optional suffix (IAZ, B, #B, IAZN, @IAX, #@P)
+    r"(.+?)\s+"                                     # name (non-greedy)
+    r"(\*?[A-Z]{2,4})\s+"                           # team code (may start with *)
+    r"(.+)$"                                        # remainder (time + rank or status)
 )
 
 # Special results: DNF, NS, OTL, DQ, DNS
@@ -110,9 +114,9 @@ def parse_result_line(line, rank_first=False):
 
     first_num = int(m.group(1))
     swimmer_id = m.group(3).strip()
-    name = m.group(4).strip()
-    team = m.group(5).strip()
-    remainder = m.group(6).strip()
+    name = m.group(5).strip()
+    team = m.group(6).strip()
+    remainder = m.group(7).strip()
 
     # Parse remainder: could be "1:01:12.7 1" or "17:32.6" or "DNF -" or "OTL -"
     # Remove trailing " -" for special results

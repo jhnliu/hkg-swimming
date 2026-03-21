@@ -49,9 +49,9 @@ export default async function CompetitionsPage({
             {season}
           </h2>
           <div className="flex flex-col gap-2">
-            {comps.map((comp) => (
+            {comps.map((comp, i) => (
               <Link
-                key={comp.id}
+                key={`${comp.id}-${comp.course}-${i}`}
                 href={`/${lang}/competition/${comp.id}`}
                 className="flex flex-col gap-2 rounded-lg border border-pool-border bg-surface px-4 py-3 hover:border-pool-mid hover:shadow-md sm:flex-row sm:items-center sm:justify-between dark:border-pool-border dark:bg-surface dark:hover:border-pool-light"
               >

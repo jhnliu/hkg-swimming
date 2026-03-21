@@ -6,18 +6,23 @@ import { useState } from "react";
 import type { Dict } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTeam } from "@/components/team-provider";
 
 export function Nav({ lang, dict }: { lang: Locale; dict: Dict }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { swimmerIds, hydrated } = useTeam();
 
-  const links = [
+  const teamBadge = hydrated && swimmerIds.length > 0 ? swimmerIds.length : null;
+
+  const links: { href: string; label: string; badge?: number | null }[] = [
     { href: `/${lang}`, label: dict.nav.home },
     { href: `/${lang}/competitions`, label: dict.nav.competitions },
     { href: `/${lang}/leaderboards`, label: dict.nav.leaderboards },
     { href: `/${lang}/clubs`, label: dict.nav.clubs },
     { href: `/${lang}/compare`, label: dict.nav.compare },
     { href: `/${lang}/trends`, label: dict.nav.trends },
+    { href: `/${lang}/team`, label: dict.nav.team, badge: teamBadge },
     { href: `/${lang}/feedback`, label: dict.nav.feedback },
     { href: `/${lang}/appeals`, label: dict.nav.appeals },
     { href: `/${lang}/changelog`, label: dict.nav.changelog },
@@ -57,6 +62,11 @@ export function Nav({ lang, dict }: { lang: Locale; dict: Dict }) {
                   }`}
                 >
                   {link.label}
+                  {link.badge != null && (
+                    <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-white/30 px-1 text-[10px] font-bold text-white">
+                      {link.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -105,6 +115,11 @@ export function Nav({ lang, dict }: { lang: Locale; dict: Dict }) {
                 }`}
               >
                 {link.label}
+                {link.badge != null && (
+                  <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-white/30 px-1 text-[10px] font-bold text-white">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             );
           })}

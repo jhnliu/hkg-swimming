@@ -11,6 +11,7 @@ import {
   formatStrokeZh,
   getClubName,
 } from "@/lib/db";
+import { NavSelect } from "@/components/nav-select";
 import { localizedMeta } from "@/lib/seo";
 
 const DEFAULT_EVENT = "Freestyle_100_LC";
@@ -46,20 +47,34 @@ export default async function LeaderboardsPage({
     gender?: string;
     ageGroup?: string;
     season?: string;
+    compType?: string;
   }>;
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
-  const { event: eventParam, gender, ageGroup, season } = await searchParams;
+  const { event: eventParam, gender, ageGroup, season, compType } = await searchParams;
 
   const dict = await getDictionary(lang as Locale);
-  const [eventKeys, filterOptions] = await Promise.all([
+  const requestedEvent = eventParam || DEFAULT_EVENT;
+  const validCompType = compType === "masters" || compType === "local" ? compType : undefined;
+  const filters = { gender, ageGroup, season, compType: validCompType };
+
+  // Fetch all data in parallel — optimistically fetch leaderboard for requested event
+  const [eventKeys, filterOptions, optimisticTop] = await Promise.all([
     getLeaderboardEventKeys(),
     getLeaderboardFilterOptions(),
+    getLeaderboard(requestedEvent, 25, filters),
   ]);
 
   const selectedEvent =
     eventParam && eventKeys.includes(eventParam) ? eventParam : DEFAULT_EVENT;
+
+  // If the requested event was invalid, re-fetch with the corrected default
+  const top =
+    requestedEvent === selectedEvent
+      ? optimisticTop
+      : await getLeaderboard(selectedEvent, 25, filters);
+
   const [selStroke, selDist, selCourse] = selectedEvent.split("_");
 
   // Extract unique distances, strokes, courses from available event keys
@@ -86,12 +101,10 @@ export default async function LeaderboardsPage({
     return DEFAULT_EVENT;
   }
 
-  const top = await getLeaderboard(selectedEvent, 25, { gender, ageGroup, season });
-
   const strokeLabel =
     lang === "zh" ? formatStrokeZh(selStroke) : formatStroke(selStroke);
 
-  const hasFilters = !!(gender || ageGroup || season);
+  const hasFilters = !!(gender || ageGroup || season || validCompType);
 
   function filterUrl(key: string, value: string | undefined): string {
     const p = new URLSearchParams();
@@ -99,6 +112,7 @@ export default async function LeaderboardsPage({
     if (gender && key !== "gender") p.set("gender", gender);
     if (ageGroup && key !== "ageGroup") p.set("ageGroup", ageGroup);
     if (season && key !== "season") p.set("season", season);
+    if (validCompType && key !== "compType") p.set("compType", validCompType);
     if (value) p.set(key, value);
     return `/${lang}/leaderboards?${p.toString()}`;
   }
@@ -109,6 +123,7 @@ export default async function LeaderboardsPage({
     if (gender) p.set("gender", gender);
     if (ageGroup) p.set("ageGroup", ageGroup);
     if (season) p.set("season", season);
+    if (validCompType) p.set("compType", validCompType);
     return `/${lang}/leaderboards?${p.toString()}`;
   }
 
@@ -207,37 +222,62 @@ export default async function LeaderboardsPage({
           ))}
         </div>
 
-        <span className="text-pool-border dark:text-pool-border">|</span>
+        <span className="hidden text-pool-border dark:text-pool-border sm:inline">|</span>
 
         {/* Age Group */}
         <div className="flex items-center gap-1">
-          <Link href={filterUrl("ageGroup", undefined)} className={!ageGroup ? PILL_ACTIVE : PILL_INACTIVE}>
-            {lang === "en" ? "All ages" : "所有年齡"}
-          </Link>
-          {filterOptions.ageGroups.map((ag) => (
-            <Link key={ag} href={filterUrl("ageGroup", ag)} className={ageGroup === ag ? PILL_ACTIVE : PILL_INACTIVE}>
-              {ag}
-            </Link>
-          ))}
+          <NavSelect
+            id="ageGroup"
+            label={lang === "en" ? "Age group" : "年齡組別"}
+            value={ageGroup || ""}
+            options={[
+              { value: "", label: lang === "en" ? "All ages" : "所有年齡" },
+              ...filterOptions.ageGroups.map((ag) => ({ value: ag, label: ag })),
+            ]}
+            urlMap={Object.fromEntries([
+              ["", filterUrl("ageGroup", undefined)],
+              ...filterOptions.ageGroups.map((ag) => [ag, filterUrl("ageGroup", ag)]),
+            ])}
+          />
         </div>
 
-        <span className="text-pool-border dark:text-pool-border">|</span>
+        <span className="hidden text-pool-border dark:text-pool-border sm:inline">|</span>
 
         {/* Season */}
         <div className="flex items-center gap-1">
-          <Link href={filterUrl("season", undefined)} className={!season ? PILL_ACTIVE : PILL_INACTIVE}>
-            {dict.leaderboard.allTime}
+          <NavSelect
+            id="season"
+            label={lang === "en" ? "Season" : "賽季"}
+            value={season || ""}
+            options={[
+              { value: "", label: dict.leaderboard.allTime },
+              ...filterOptions.seasons.map((s) => ({ value: s, label: s })),
+            ]}
+            urlMap={Object.fromEntries([
+              ["", filterUrl("season", undefined)],
+              ...filterOptions.seasons.map((s) => [s, filterUrl("season", s)]),
+            ])}
+          />
+        </div>
+
+        <span className="hidden text-pool-border dark:text-pool-border sm:inline">|</span>
+
+        {/* Competition type */}
+        <div className="flex items-center gap-1">
+          <Link href={filterUrl("compType", undefined)} className={!validCompType ? PILL_ACTIVE : PILL_INACTIVE}>
+            {lang === "en" ? "All" : "全部"}
           </Link>
-          {filterOptions.seasons.map((s) => (
-            <Link key={s} href={filterUrl("season", s)} className={season === s ? PILL_ACTIVE : PILL_INACTIVE}>
-              {s}
-            </Link>
-          ))}
+          <Link href={filterUrl("compType", "local")} className={validCompType === "local" ? PILL_ACTIVE : PILL_INACTIVE}>
+            {lang === "en" ? "Local" : "本地"}
+          </Link>
+          <Link href={filterUrl("compType", "masters")} className={validCompType === "masters" ? PILL_ACTIVE : PILL_INACTIVE}>
+            {lang === "en" ? "Masters" : "先進"}
+          </Link>
         </div>
 
         {hasFilters && (
           <>
-            <span className="text-pool-border dark:text-pool-border">|</span>
+            <span className="hidden text-pool-border dark:text-pool-border sm:inline">|</span>
             <Link
               href={`/${lang}/leaderboards?event=${selectedEvent}`}
               className="rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
@@ -276,6 +316,13 @@ export default async function LeaderboardsPage({
               {season}
             </span>
           )}
+          {validCompType && (
+            <span className="ml-2 rounded px-1.5 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">
+              {validCompType === "masters"
+                ? lang === "en" ? "Masters" : "先進"
+                : lang === "en" ? "Local" : "本地"}
+            </span>
+          )}
         </h2>
 
         {top.length === 0 ? (
@@ -287,22 +334,22 @@ export default async function LeaderboardsPage({
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10">
                 <tr className="border-b border-pool-border bg-pool-surface dark:border-pool-border dark:bg-surface-alt">
-                  <th className="w-12 px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="w-10 px-2 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light sm:w-12 sm:px-3">
                     {dict.common.place}
                   </th>
-                  <th className="px-3 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="px-2 py-2.5 text-left font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                     {dict.common.name}
                   </th>
-                  <th className="px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {dict.common.team}
                   </th>
-                  <th className="px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-center font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {dict.swimmer.age}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="px-2 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                     {dict.swimmer.time}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light">
+                  <th className="hidden px-3 py-2.5 text-right font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                     {dict.swimmer.date}
                   </th>
                 </tr>
@@ -315,18 +362,27 @@ export default async function LeaderboardsPage({
                       i % 2 === 1 ? "bg-pool-surface/50 dark:bg-surface-alt/30" : ""
                     }`}
                   >
-                    <td className="px-3 py-2 text-center font-medium">
+                    <td className="px-2 py-2 text-center font-medium sm:px-3">
                       <MedalRank rank={i + 1} />
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2 sm:px-3">
                       <Link
                         href={`/${lang}/swimmer/${encodeURIComponent(pb.swimmer_id)}`}
                         className="font-medium text-pool-mid hover:text-pool-deep dark:text-pool-light dark:hover:text-white"
                       >
                         {pb.swimmer_name}
                       </Link>
+                      <div className="mt-0.5 text-xs text-muted dark:text-pool-light/50 sm:hidden">
+                        <Link
+                          href={`/${lang}/club/${pb.club}`}
+                          className="hover:text-pool-mid dark:hover:text-pool-light"
+                        >
+                          {pb.club}
+                        </Link>
+                        {pb.age && <> · {pb.age}</>}
+                      </div>
                     </td>
-                    <td className="px-3 py-2 text-center">
+                    <td className="hidden px-3 py-2 text-center sm:table-cell">
                       <Link
                         href={`/${lang}/club/${pb.club}`}
                         className="font-medium text-foreground/80 hover:text-pool-mid dark:hover:text-pool-light"
@@ -335,13 +391,13 @@ export default async function LeaderboardsPage({
                         {pb.club}
                       </Link>
                     </td>
-                    <td className="px-3 py-2 text-center text-muted dark:text-pool-light/60">
+                    <td className="hidden px-3 py-2 text-center text-muted dark:text-pool-light/60 sm:table-cell">
                       {pb.age}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono font-medium tracking-wider text-foreground timing-display">
+                    <td className="px-2 py-2 text-right font-mono font-medium tracking-wider text-foreground timing-display sm:px-3">
                       {pb.time}
                     </td>
-                    <td className="px-3 py-2 text-right text-muted dark:text-pool-light/60">
+                    <td className="hidden px-3 py-2 text-right text-muted dark:text-pool-light/60 sm:table-cell">
                       {pb.date}
                     </td>
                   </tr>

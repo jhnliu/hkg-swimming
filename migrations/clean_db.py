@@ -10,7 +10,7 @@ Safe to run multiple times (idempotent).
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "swimming.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "swimming.db")
 
 
 def clean_swimmer_id_hash(cur: sqlite3.Cursor) -> int:

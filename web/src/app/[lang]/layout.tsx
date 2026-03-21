@@ -3,6 +3,7 @@ import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { Nav } from "@/components/nav";
 import { SetLang } from "@/components/set-lang";
+import { TeamProvider } from "@/components/team-provider";
 
 export function generateStaticParams() {
   return [{ lang: "en" }, { lang: "zh" }];
@@ -21,7 +22,7 @@ export default async function LangLayout({
   const dict = await getDictionary(lang as Locale);
 
   return (
-    <>
+    <TeamProvider>
       <SetLang lang={lang} />
       <Nav lang={lang as Locale} dict={dict} />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
@@ -38,6 +39,6 @@ export default async function LangLayout({
           </p>
         </div>
       </footer>
-    </>
+    </TeamProvider>
   );
 }

@@ -67,7 +67,8 @@ export default async function ChangelogPage({
 
   const dict = await getDictionary(lang as Locale);
 
-  const changelogPath = path.join(process.cwd(), "..", "CHANGELOG.md");
+  const filename = lang === "zh" ? "changelog_user_zh.md" : "changelog_user.md";
+  const changelogPath = path.join(process.cwd(), "public", filename);
   const markdown = await readFile(changelogPath, "utf-8");
   const entries = parseChangelog(markdown);
 

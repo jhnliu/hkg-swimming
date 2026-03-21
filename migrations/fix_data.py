@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Fix data quality issues in swimming.db."""
 
+import os
 import re
 import sqlite3
 from datetime import datetime
 
-DB_PATH = "swimming.db"
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "swimming.db")
 
 def main():
     conn = sqlite3.connect(DB_PATH)

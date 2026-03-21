@@ -24,7 +24,7 @@ except ImportError:
     print("Install psycopg2-binary:  pip install psycopg2-binary")
     sys.exit(1)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "swimming.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "swimming.db")
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if not DATABASE_URL:
@@ -67,7 +67,8 @@ def main():
             seed_time TEXT NOT NULL DEFAULT '',
             finals_time TEXT NOT NULL DEFAULT '',
             time_standard TEXT NOT NULL DEFAULT '',
-            splits TEXT NOT NULL DEFAULT ''
+            splits TEXT NOT NULL DEFAULT '',
+            time_seconds DOUBLE PRECISION
         )
     """)
     pg_conn.commit()
@@ -82,7 +83,7 @@ def main():
         SELECT competition_id, competition_name, date, event_num,
                gender, age_group, distance, course, stroke, place,
                swimmer_id, swimmer_name, age, club,
-               seed_time, finals_time, time_standard, splits
+               seed_time, finals_time, time_standard, splits, time_seconds
         FROM results
     """)
 
@@ -94,7 +95,7 @@ def main():
         "competition_id", "competition_name", "date", "event_num",
         "gender", "age_group", "distance", "course", "stroke", "place",
         "swimmer_id", "swimmer_name", "age", "club",
-        "seed_time", "finals_time", "time_standard", "splits"
+        "seed_time", "finals_time", "time_standard", "splits", "time_seconds"
     )
     insert_sql = f"""
         INSERT INTO results_new ({', '.join(cols)})
@@ -103,7 +104,7 @@ def main():
 
     for row in cur_s:
         values = tuple(
-            row[c] if row[c] is not None else (None if c in ('place', 'age') else '')
+            row[c] if row[c] is not None else (None if c in ('place', 'age', 'time_seconds') else '')
             for c in cols
         )
         batch.append(values)
@@ -130,6 +131,8 @@ def main():
         "CREATE INDEX idx_results_new_competition_id ON results_new(competition_id)",
         "CREATE INDEX idx_results_new_date ON results_new(date)",
         "CREATE INDEX idx_results_new_event ON results_new(distance, stroke, course, gender)",
+        # Composite index for leaderboard queries — time_seconds enables fast sorted lookups
+        "CREATE INDEX idx_results_new_leaderboard ON results_new(stroke, distance, course, time_seconds) WHERE time_seconds IS NOT NULL",
     ]
     for idx in indexes:
         cur_p.execute(idx)
@@ -148,6 +151,7 @@ def main():
     cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_competition_id RENAME TO idx_results_competition_id")
     cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_date RENAME TO idx_results_date")
     cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_event RENAME TO idx_results_event")
+    cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_leaderboard RENAME TO idx_results_leaderboard")
     pg_conn.commit()
     print("Swap complete.")
 

@@ -8,7 +8,7 @@ interface Crumb {
 
 export function Breadcrumb({ items, lang }: { items: Crumb[]; lang: Locale }) {
   return (
-    <nav className="flex items-center gap-1.5 text-sm text-muted dark:text-pool-light/60">
+    <nav className="flex flex-wrap items-center gap-1.5 text-xs text-muted dark:text-pool-light/60 sm:text-sm">
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-1.5">
           {i > 0 && <span>/</span>}

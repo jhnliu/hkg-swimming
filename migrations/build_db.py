@@ -7,7 +7,26 @@ import re
 import sqlite3
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+
+def parse_time_to_seconds(time_str: str) -> float | None:
+    """Convert a time string like '1:23.45' or '55.80' to seconds."""
+    if not time_str:
+        return None
+    # Strip trailing non-numeric chars (e.g. "55.80S" -> "55.80")
+    cleaned = re.sub(r'[^0-9:.]+$', '', time_str.strip())
+    if not re.match(r'^[0-9]+([:.][0-9]+)*$', cleaned):
+        return None
+    parts = cleaned.split(':')
+    try:
+        if len(parts) == 3:
+            return float(parts[0]) * 3600 + float(parts[1]) * 60 + float(parts[2])
+        if len(parts) == 2:
+            return float(parts[0]) * 60 + float(parts[1])
+        return float(parts[0])
+    except (ValueError, IndexError):
+        return None
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 CSV_DIRS = [
     BASE_DIR / "data/csv/local_competition",
     BASE_DIR / "data/csv/masters",
@@ -42,7 +61,8 @@ def main():
             seed_time TEXT,
             finals_time TEXT,
             time_standard TEXT,
-            splits TEXT
+            splits TEXT,
+            time_seconds REAL
         );
 
         CREATE INDEX idx_swimmer_id ON results(swimmer_id);
@@ -70,16 +90,19 @@ def main():
                 raw_id = row["swimmer_id"].strip()
                 id_match = re.match(r"(\d+)", raw_id)
                 swimmer_id = id_match.group(1) if id_match else raw_id
+                time_standard = row["time_standard"]
+                finals_time = row["finals_time"]
+                time_seconds = parse_time_to_seconds(finals_time) if finals_time else None
                 rows.append((
                     row["competition_id"], row["competition_name"], row["date"],
                     int(row["event_num"]), row["gender"], row["age_group"],
                     row["distance"], row["course"], row["stroke"],
                     place, swimmer_id, row["swimmer_name"],
-                    age, row["club"], row["seed_time"], row["finals_time"],
-                    row["time_standard"], row["splits"],
+                    age, row["club"], row["seed_time"], finals_time,
+                    time_standard, row["splits"], time_seconds,
                 ))
             cur.executemany(
-                "INSERT INTO results VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO results VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 rows
             )
             total += len(rows)

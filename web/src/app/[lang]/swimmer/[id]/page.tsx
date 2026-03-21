@@ -15,6 +15,7 @@ import {
 import type { PersonalBest } from "@/lib/db";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { PbChart } from "@/components/pb-chart";
+import { AddToTeamButton } from "@/components/add-to-team-button";
 import { alternatesForPath, ogMeta } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -62,19 +63,19 @@ function PbTable({
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-pool-border bg-pool-surface dark:border-pool-border dark:bg-surface-alt">
-              <th className="px-3 py-2 text-left font-semibold text-pool-deep dark:text-pool-light">
+              <th className="px-2 py-2 text-left font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                 {dict.event}
               </th>
-              <th className="px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light">
+              <th className="px-2 py-2 text-right font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                 {dict.time}
               </th>
-              <th className="px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light">
+              <th className="hidden px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                 {dict.place}
               </th>
-              <th className="px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light">
+              <th className="hidden px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                 {dict.age}
               </th>
-              <th className="px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light">
+              <th className="hidden px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                 {dict.competition}
               </th>
             </tr>
@@ -87,22 +88,25 @@ function PbTable({
                   i % 2 === 1 ? "bg-pool-surface/50 dark:bg-surface-alt/30" : ""
                 }`}
               >
-                <td className="px-3 py-2 font-medium text-foreground">
+                <td className="px-2 py-2 font-medium text-foreground sm:px-3">
                   {pb.distance}m{" "}
                   {lang === "zh"
                     ? formatStrokeZh(pb.stroke)
                     : formatStroke(pb.stroke)}
                 </td>
-                <td className="px-3 py-2 text-right font-mono text-foreground timing-display">
+                <td className="px-2 py-2 text-right font-mono text-foreground timing-display sm:px-3">
                   {pb.time}
+                  <div className="mt-0.5 text-xs font-sans font-normal text-muted dark:text-pool-light/50 sm:hidden">
+                    {pb.date}
+                  </div>
                 </td>
-                <td className="px-3 py-2 text-center text-muted dark:text-pool-light/60">
+                <td className="hidden px-3 py-2 text-center text-muted dark:text-pool-light/60 sm:table-cell">
                   {pb.place != null ? pb.place : "–"}
                 </td>
-                <td className="px-3 py-2 text-right text-muted dark:text-pool-light/60">
+                <td className="hidden px-3 py-2 text-right text-muted dark:text-pool-light/60 sm:table-cell">
                   {pb.age}
                 </td>
-                <td className="px-3 py-2 text-right">
+                <td className="hidden px-3 py-2 text-right sm:table-cell">
                   {pb.competition_id ? (
                     <Link
                       href={`/${lang}/competition/${encodeURIComponent(pb.competition_id)}`}
@@ -157,9 +161,19 @@ export default async function SwimmerPage({
         />
         {/* Swimmer card */}
         <div className="depth-card rounded-lg border border-pool-border bg-surface p-5 dark:border-pool-border dark:bg-surface">
-          <h1 className="text-3xl font-bold text-foreground">
-            {swimmer.name}
-          </h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
+              {swimmer.name}
+            </h1>
+            <AddToTeamButton
+              swimmerId={decodedId}
+              dict={{
+                addToTeam: dict.team.addToTeam,
+                removeFromTeam: dict.team.removeFromTeam,
+                addedToTeam: dict.team.addedToTeam,
+              }}
+            />
+          </div>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted dark:text-pool-light/60">
             <Link
               href={`/${lang}/club/${swimmer.club}`}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getCompetitions, getDbStats, tierLabel } from "@/lib/db";
+import { HomeSearch } from "@/components/home-search";
 import { alternatesForPath } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -26,36 +27,20 @@ export default async function HomePage({
   return (
     <div className="flex flex-col gap-10">
       {/* Hero */}
-      <section className="relative flex flex-col items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-br from-pool-deep via-pool-mid to-sky-400 px-6 pt-14 pb-10 text-center dark:from-pool-deep dark:via-[#0f2440] dark:to-[#0c4a6e]">
+      <section className="relative flex flex-col items-center gap-3 overflow-x-clip rounded-2xl bg-gradient-to-br from-pool-deep via-pool-mid to-sky-400 px-4 pt-10 pb-8 text-center sm:gap-4 sm:px-6 sm:pt-14 sm:pb-10 dark:from-pool-deep dark:via-[#0f2440] dark:to-[#0c4a6e]">
         {/* Wave decoration */}
         <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 60" preserveAspectRatio="none" style={{ height: "30px" }}>
           <path d="M0,30 C360,60 720,0 1080,30 C1260,45 1350,20 1440,30 L1440,60 L0,60 Z" fill="var(--background)" opacity="0.6" />
           <path d="M0,40 C360,60 720,15 1080,40 C1260,50 1350,30 1440,40 L1440,60 L0,60 Z" fill="var(--background)" />
         </svg>
-        <h1 className="text-4xl font-bold tracking-tight text-white">
+        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">
           {dict.home.title}
         </h1>
-        <p className="max-w-lg text-lg text-sky-100">
+        <p className="max-w-lg text-sm text-sky-100 sm:text-lg">
           {dict.home.subtitle}
         </p>
         <div className="mt-4 w-full max-w-xl">
-          <form action={`/${lang}/search`} method="get" className="relative">
-            <svg
-              className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-sky-300"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <input
-              name="q"
-              type="text"
-              placeholder={dict.home.searchPlaceholder}
-              className="h-12 w-full rounded-lg border border-white/20 bg-white/15 pl-11 pr-4 text-base text-white shadow-lg backdrop-blur-sm placeholder:text-sky-200/70 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
-            />
-          </form>
+          <HomeSearch lang={lang as Locale} placeholder={dict.home.searchPlaceholder} />
         </div>
       </section>
 
@@ -104,7 +89,7 @@ export default async function HomePage({
             className="depth-card rounded-lg border border-pool-border bg-surface p-4 dark:border-pool-border dark:bg-surface"
           >
             <div className="mb-2">{stat.icon}</div>
-            <div className="text-2xl font-bold text-foreground">
+            <div className="text-lg font-bold text-foreground sm:text-2xl">
               {stat.value}
             </div>
             <div className="mt-1 text-xs text-muted dark:text-pool-light/60">

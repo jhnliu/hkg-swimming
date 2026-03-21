@@ -9,7 +9,8 @@
     "trends": "Trends",
     "feedback": "Feedback",
     "appeals": "Appeals",
-    "changelog": "Changelog"
+    "changelog": "Changelog",
+    "team": "My Team"
   },
   "home": {
     "title": "HKG Swimming",
@@ -142,6 +143,33 @@
     "clubDescription": "{code} swimming club — roster, medal tally, season statistics, and stroke analysis.",
     "longCourse": "Long Course",
     "shortCourse": "Short Course"
+  },
+  "team": {
+    "title": "My Team",
+    "subtitle": "Track your favourite swimmers in one place",
+    "addToTeam": "Add to team",
+    "removeFromTeam": "Remove",
+    "addedToTeam": "Added!",
+    "emptyTeam": "No swimmers in your team yet. Visit a swimmer's page and click \"Add to team\".",
+    "saveTeam": "Save Team",
+    "loadTeam": "Load Team",
+    "teamCode": "Team Code",
+    "teamCodePlaceholder": "e.g. my-team-2024",
+    "teamCodeHint": "3-30 characters, lowercase letters, numbers, and hyphens",
+    "teamName": "Team Name (optional)",
+    "teamNamePlaceholder": "e.g. Sunday Squad",
+    "saved": "Team saved!",
+    "loaded": "Team loaded!",
+    "notFound": "Team not found",
+    "invalidCode": "Invalid code. Use 3-30 lowercase letters, numbers, and hyphens.",
+    "shareLink": "Share this link to let others view your team",
+    "clearTeam": "Clear Team",
+    "clearConfirm": "Remove all swimmers from your team?",
+    "swimmers": "swimmers",
+    "codeTaken": "Anyone with this code can overwrite the team",
+    "lc": "LC",
+    "sc": "SC",
+    "noPbs": "No PBs yet"
   },
   "common": {
     "male": "Male",

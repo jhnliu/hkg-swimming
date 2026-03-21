@@ -248,9 +248,10 @@ export function CompetitionResults({
 
       {/* Swimmer search loading */}
       {isSearchMode && loading.has("swimmer") && (
-        <p className="text-sm text-muted dark:text-pool-light/50">
+        <div className="flex items-center gap-2 text-sm text-muted dark:text-pool-light/50">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-pool-mid/30 border-t-pool-mid dark:border-pool-light/30 dark:border-t-pool-light" />
           {dict.competition.loadingResults}
-        </p>
+        </div>
       )}
 
       {/* Swimmer search results */}
@@ -324,9 +325,10 @@ export function CompetitionResults({
                 {isExpanded && (
                   <div className="mt-2">
                     {isLoading && (
-                      <p className="px-4 py-3 text-sm text-muted dark:text-pool-light/50">
+                      <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted dark:text-pool-light/50">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-pool-mid/30 border-t-pool-mid dark:border-pool-light/30 dark:border-t-pool-light" />
                         {dict.competition.loadingResults}
-                      </p>
+                      </div>
                     )}
                     {results && (
                       <EventResultsTable
@@ -367,25 +369,25 @@ function EventResultsTable({
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-pool-border bg-pool-surface dark:border-pool-border dark:bg-surface-alt">
-              <th className="w-12 px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light">
+              <th className="w-10 px-2 py-2 text-center font-semibold text-pool-deep dark:text-pool-light sm:w-12 sm:px-3">
                 {dict.common.place}
               </th>
-              <th className="px-3 py-2 text-left font-semibold text-pool-deep dark:text-pool-light">
+              <th className="px-2 py-2 text-left font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                 {dict.common.name}
               </th>
-              <th className="px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light">
+              <th className="hidden px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                 {dict.swimmer.age}
               </th>
-              <th className="px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light">
+              <th className="hidden px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                 {dict.common.team}
               </th>
-              <th className="px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light">
+              <th className="hidden px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                 {dict.common.seedTime}
               </th>
-              <th className="px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light">
+              <th className="px-2 py-2 text-right font-semibold text-pool-deep dark:text-pool-light sm:px-3">
                 {dict.common.finalsTime}
               </th>
-              <th className="w-16 px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light">
+              <th className="hidden w-16 px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light sm:table-cell">
                 Std
               </th>
             </tr>
@@ -398,21 +400,30 @@ function EventResultsTable({
                   i % 2 === 1 ? "bg-pool-surface/50 dark:bg-surface-alt/30" : ""
                 }`}
               >
-                <td className="px-3 py-2 text-center text-muted dark:text-pool-light/50">
+                <td className="px-2 py-2 text-center text-muted dark:text-pool-light/50 sm:px-3">
                   {r.place ?? "—"}
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-2 py-2 sm:px-3">
                   <Link
                     href={`/${lang}/swimmer/${encodeURIComponent(r.swimmer_id)}`}
                     className="font-medium text-pool-mid hover:text-pool-deep dark:text-pool-light dark:hover:text-white"
                   >
                     {r.swimmer_name}
                   </Link>
+                  <div className="mt-0.5 text-xs text-muted dark:text-pool-light/50 sm:hidden">
+                    <Link
+                      href={`/${lang}/club/${r.club}`}
+                      className="hover:text-pool-mid dark:hover:text-pool-light"
+                    >
+                      {r.club}
+                    </Link>
+                    {r.age && <> · {r.age}</>}
+                  </div>
                 </td>
-                <td className="px-3 py-2 text-center text-muted dark:text-pool-light/60">
+                <td className="hidden px-3 py-2 text-center text-muted dark:text-pool-light/60 sm:table-cell">
                   {r.age}
                 </td>
-                <td className="px-3 py-2 text-center">
+                <td className="hidden px-3 py-2 text-center sm:table-cell">
                   <Link
                     href={`/${lang}/club/${r.club}`}
                     className="font-medium text-foreground/80 hover:text-pool-mid dark:hover:text-pool-light"
@@ -420,13 +431,13 @@ function EventResultsTable({
                     {r.club}
                   </Link>
                 </td>
-                <td className="px-3 py-2 text-right font-mono text-muted timing-display dark:text-pool-light/60">
+                <td className="hidden px-3 py-2 text-right font-mono text-muted timing-display dark:text-pool-light/60 sm:table-cell">
                   {r.seed_time || "NT"}
                 </td>
-                <td className="px-3 py-2 text-right font-mono font-medium text-foreground timing-display">
+                <td className="px-2 py-2 text-right font-mono font-medium text-foreground timing-display sm:px-3">
                   {r.finals_time || r.time_standard || "—"}
                 </td>
-                <td className="px-3 py-2 text-center">
+                <td className="hidden px-3 py-2 text-center sm:table-cell">
                   {r.time_standard &&
                     !["SCR", "DQ", "DNF", "NS"].includes(r.time_standard) && (
                       <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">

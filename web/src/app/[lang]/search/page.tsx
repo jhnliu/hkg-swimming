@@ -169,7 +169,7 @@ export default async function SearchPage({
               <Link
                 key={c.id}
                 href={`/${lang}/competition/${c.id}`}
-                className="flex items-center justify-between rounded-lg border border-pool-border bg-surface px-4 py-3 hover:border-pool-mid hover:shadow-md dark:border-pool-border dark:bg-surface dark:hover:border-pool-light"
+                className="flex flex-col gap-1 rounded-lg border border-pool-border bg-surface px-4 py-3 hover:border-pool-mid hover:shadow-md sm:flex-row sm:items-center sm:justify-between dark:border-pool-border dark:bg-surface dark:hover:border-pool-light"
               >
                 <span className="font-medium text-foreground">
                   {c.name}
