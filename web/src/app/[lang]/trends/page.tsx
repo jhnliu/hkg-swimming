@@ -1,14 +1,28 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
+import { localizedMeta } from "@/lib/seo";
 import {
   getBiggestImprovers,
   getBreakthroughSwims,
   getTrendFilterOptions,
   formatStroke,
   formatStrokeZh,
+  getClubName,
 } from "@/lib/db";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) return {};
+  const dict = await getDictionary(lang as Locale);
+  return localizedMeta({ lang: lang as Locale, dict, titleKey: dict.nav.trends, descriptionKey: "trendsDescription", path: "/trends" });
+}
 
 function formatDuration(days: number, lang: "en" | "zh"): string {
   if (days < 30) return lang === "en" ? `${days}d` : `${days}日`;
@@ -254,6 +268,7 @@ export default async function TrendsPage({
                         <Link
                           href={`/${lang}/club/${imp.club}`}
                           className="font-medium text-foreground/80 hover:text-pool-mid dark:hover:text-pool-light"
+                          title={getClubName(imp.club, lang === "zh" ? "zh" : "en")}
                         >
                           {imp.club}
                         </Link>
@@ -358,6 +373,7 @@ export default async function TrendsPage({
                         <Link
                           href={`/${lang}/club/${b.club}`}
                           className="font-medium text-foreground/80 hover:text-pool-mid dark:hover:text-pool-light"
+                          title={getClubName(b.club, lang === "zh" ? "zh" : "en")}
                         >
                           {b.club}
                         </Link>

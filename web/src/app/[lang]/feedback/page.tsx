@@ -1,23 +1,28 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getFeedback } from "@/lib/db";
 import { submitFeedbackAction } from "./actions";
+import { localizedMeta } from "@/lib/seo";
+import FeedbackList from "./FeedbackList";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) return {};
+  const dict = await getDictionary(lang as Locale);
+  return localizedMeta({ lang: lang as Locale, dict, titleKey: dict.feedback.title, descriptionKey: "feedbackDescription", path: "/feedback" });
+}
 
 const CATEGORY_LABELS: Record<string, { en: string; zh: string }> = {
   bug: { en: "Bug Report", zh: "錯誤報告" },
   feature: { en: "Feature Request", zh: "功能請求" },
   data: { en: "Data Issue", zh: "數據問題" },
   feedback: { en: "General Feedback", zh: "一般意見" },
-};
-
-const STATUS_STYLES: Record<string, string> = {
-  open: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
-  "in-progress":
-    "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-  resolved:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
-  closed: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 
 export default async function FeedbackPage({
@@ -33,9 +38,6 @@ export default async function FeedbackPage({
 
   const dict = await getDictionary(lang as Locale);
   const items = await getFeedback();
-
-  const openCount = items.filter((i) => i.status === "open").length;
-  const resolvedCount = items.filter((i) => i.status === "resolved").length;
 
   return (
     <div className="flex flex-col gap-10">
@@ -157,68 +159,16 @@ export default async function FeedbackPage({
         </form>
       </section>
 
-      {/* Outstanding issues / feedback */}
-      <section>
-        <div className="mb-4 flex items-center gap-4">
-          <h2 className="lane-line text-xl font-semibold text-foreground">
-            {dict.feedback.listTitle}
-          </h2>
-          <div className="flex gap-2 text-xs">
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-              {openCount} {dict.feedback.openLabel}
-            </span>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-medium text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
-              {resolvedCount} {dict.feedback.resolvedLabel}
-            </span>
-          </div>
-        </div>
-
-        {items.length === 0 ? (
-          <p className="text-muted dark:text-pool-light/50">
-            {dict.feedback.noItems}
-          </p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-lg border border-pool-border bg-white p-4 dark:border-pool-border dark:bg-surface-alt/50"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-xs font-medium ${
-                        STATUS_STYLES[item.status] || STATUS_STYLES.open
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                    <span className="rounded bg-pool-surface px-1.5 py-0.5 text-xs font-medium text-muted dark:bg-surface-alt dark:text-pool-light/60">
-                      {CATEGORY_LABELS[item.category]?.[lang as "en" | "zh"] ||
-                        item.category}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted dark:text-pool-light/50">
-                    {new Date(item.created_at).toLocaleDateString(
-                      lang === "zh" ? "zh-HK" : "en-US",
-                      { year: "numeric", month: "short", day: "numeric" }
-                    )}
-                  </span>
-                </div>
-                <h3 className="mt-2 font-medium text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-1 text-sm text-muted dark:text-pool-light/60 whitespace-pre-wrap">
-                  {item.description}
-                </p>
-                <p className="mt-2 text-xs text-muted/60 dark:text-pool-light/40">
-                  {lang === "en" ? "By" : "提交者"}: {item.name}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <FeedbackList
+        items={items}
+        lang={lang}
+        labels={{
+          listTitle: dict.feedback.listTitle,
+          openLabel: dict.feedback.openLabel,
+          resolvedLabel: dict.feedback.resolvedLabel,
+          noItems: dict.feedback.noItems,
+        }}
+      />
     </div>
   );
 }

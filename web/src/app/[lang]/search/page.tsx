@@ -1,8 +1,21 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { search } from "@/lib/db";
+import { localizedMeta } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) return {};
+  const dict = await getDictionary(lang as Locale);
+  return localizedMeta({ lang: lang as Locale, dict, titleKey: dict.nav.swimmers, descriptionKey: "searchDescription", path: "/search" });
+}
 
 export default async function SearchPage({
   params,

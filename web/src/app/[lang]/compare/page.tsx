@@ -1,31 +1,40 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
+import { localizedMeta } from "@/lib/seo";
 import {
   getSwimmer,
   getHeadToHead,
-  searchSwimmers,
   formatStroke,
   formatStrokeZh,
 } from "@/lib/db";
+import { SwimmerPicker } from "@/components/swimmer-picker";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) return {};
+  const dict = await getDictionary(lang as Locale);
+  return localizedMeta({ lang: lang as Locale, dict, titleKey: dict.nav.compare, descriptionKey: "compareDescription", path: "/compare" });
+}
 
 export default async function ComparePage({
   params,
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ s1?: string; s2?: string; q1?: string; q2?: string }>;
+  searchParams: Promise<{ s1?: string; s2?: string }>;
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
-  const { s1, s2, q1, q2 } = await searchParams;
+  const { s1, s2 } = await searchParams;
 
   const dict = await getDictionary(lang as Locale);
-
-  // Search results for swimmer pickers
-  const search1 = q1 ? await searchSwimmers(q1, 8) : [];
-  const search2 = q2 ? await searchSwimmers(q2, 8) : [];
 
   // Load selected swimmers
   const swimmer1 = s1 ? await getSwimmer(s1) : undefined;
@@ -86,36 +95,14 @@ export default async function ComparePage({
               </Link>
             </div>
           ) : (
-            <form action={baseUrl} method="get">
-              {s2 && <input type="hidden" name="s2" value={s2} />}
-              <input
-                name="q1"
-                type="text"
-                defaultValue={q1 || ""}
-                placeholder={lang === "en" ? "Search swimmer..." : "搜尋泳手..."}
-                className="h-10 w-full rounded-md border border-pool-border bg-surface px-3 text-sm text-foreground placeholder:text-muted/50 focus:border-pool-mid focus:outline-none dark:border-pool-border dark:bg-surface-alt dark:placeholder:text-pool-light/40"
-                autoFocus
-              />
-              {search1.length > 0 && (
-                <ul className="mt-2 rounded-md border border-pool-border bg-surface dark:border-pool-border dark:bg-surface-alt">
-                  {search1.map((s) => (
-                    <li key={s.id}>
-                      <Link
-                        href={`${baseUrl}?s1=${encodeURIComponent(s.id)}${s2 ? `&s2=${encodeURIComponent(s2)}` : ""}`}
-                        className="flex items-center justify-between px-3 py-2 text-sm hover:bg-pool-surface dark:hover:bg-pool-border/30"
-                      >
-                        <span className="font-medium text-foreground">
-                          {s.name}
-                        </span>
-                        <span className="text-xs text-muted dark:text-pool-light/60">
-                          {s.club}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </form>
+            <SwimmerPicker
+              lang={lang}
+              paramName="s1"
+              otherParam={s2 ? "s2" : undefined}
+              otherValue={s2}
+              placeholder={lang === "en" ? "Search swimmer..." : "搜尋泳手..."}
+              autoFocus
+            />
           )}
         </div>
 
@@ -145,35 +132,13 @@ export default async function ComparePage({
               </Link>
             </div>
           ) : (
-            <form action={baseUrl} method="get">
-              {s1 && <input type="hidden" name="s1" value={s1} />}
-              <input
-                name="q2"
-                type="text"
-                defaultValue={q2 || ""}
-                placeholder={lang === "en" ? "Search swimmer..." : "搜尋泳手..."}
-                className="h-10 w-full rounded-md border border-pool-border bg-surface px-3 text-sm text-foreground placeholder:text-muted/50 focus:border-pool-mid focus:outline-none dark:border-pool-border dark:bg-surface-alt dark:placeholder:text-pool-light/40"
-              />
-              {search2.length > 0 && (
-                <ul className="mt-2 rounded-md border border-pool-border bg-surface dark:border-pool-border dark:bg-surface-alt">
-                  {search2.map((s) => (
-                    <li key={s.id}>
-                      <Link
-                        href={`${baseUrl}?${s1 ? `s1=${encodeURIComponent(s1)}&` : ""}s2=${encodeURIComponent(s.id)}`}
-                        className="flex items-center justify-between px-3 py-2 text-sm hover:bg-pool-surface dark:hover:bg-pool-border/30"
-                      >
-                        <span className="font-medium text-foreground">
-                          {s.name}
-                        </span>
-                        <span className="text-xs text-muted dark:text-pool-light/60">
-                          {s.club}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </form>
+            <SwimmerPicker
+              lang={lang}
+              paramName="s2"
+              otherParam={s1 ? "s1" : undefined}
+              otherValue={s1}
+              placeholder={lang === "en" ? "Search swimmer..." : "搜尋泳手..."}
+            />
           )}
         </div>
       </div>

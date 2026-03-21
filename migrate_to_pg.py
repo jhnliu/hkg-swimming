@@ -6,7 +6,11 @@ Usage:
     export DATABASE_URL="postgresql://user:pass@host/dbname?sslmode=require"
     python migrate_to_pg.py
 
-Safe to re-run — drops and recreates the table.
+Uses a swap-table strategy for near-zero downtime:
+  1. Load data into results_new
+  2. Build indexes on results_new
+  3. Atomic rename: results → results_old, results_new → results
+  4. Drop results_old
 """
 
 import os
@@ -41,10 +45,10 @@ def main():
 
     print("Connected to both databases.")
 
-    # Create table
-    cur_p.execute("DROP TABLE IF EXISTS results CASCADE")
+    # --- Step 1: Create staging table ---
+    cur_p.execute("DROP TABLE IF EXISTS results_new CASCADE")
     cur_p.execute("""
-        CREATE TABLE results (
+        CREATE TABLE results_new (
             id SERIAL PRIMARY KEY,
             competition_id TEXT NOT NULL DEFAULT '',
             competition_name TEXT NOT NULL DEFAULT '',
@@ -67,9 +71,9 @@ def main():
         )
     """)
     pg_conn.commit()
-    print("Created results table.")
+    print("Created staging table (results_new).")
 
-    # Read all rows from SQLite
+    # --- Step 2: Bulk insert into staging table ---
     cur_s.execute("SELECT COUNT(*) FROM results")
     total = cur_s.fetchone()[0]
     print(f"Migrating {total:,} rows...")
@@ -93,7 +97,7 @@ def main():
         "seed_time", "finals_time", "time_standard", "splits"
     )
     insert_sql = f"""
-        INSERT INTO results ({', '.join(cols)})
+        INSERT INTO results_new ({', '.join(cols)})
         VALUES ({', '.join(['%s'] * len(cols))})
     """
 
@@ -117,21 +121,37 @@ def main():
 
     print(f"  {count:,} / {total:,} (100%)")
 
-    # Create indexes
-    print("Creating indexes...")
+    # --- Step 3: Create indexes on staging table ---
+    print("Creating indexes on staging table...")
     indexes = [
-        "CREATE INDEX idx_results_swimmer_id ON results(swimmer_id)",
-        "CREATE INDEX idx_results_swimmer_name ON results(swimmer_name)",
-        "CREATE INDEX idx_results_club ON results(club)",
-        "CREATE INDEX idx_results_competition_id ON results(competition_id)",
-        "CREATE INDEX idx_results_date ON results(date)",
-        "CREATE INDEX idx_results_event ON results(distance, stroke, course, gender)",
+        "CREATE INDEX idx_results_new_swimmer_id ON results_new(swimmer_id)",
+        "CREATE INDEX idx_results_new_swimmer_name ON results_new(swimmer_name)",
+        "CREATE INDEX idx_results_new_club ON results_new(club)",
+        "CREATE INDEX idx_results_new_competition_id ON results_new(competition_id)",
+        "CREATE INDEX idx_results_new_date ON results_new(date)",
+        "CREATE INDEX idx_results_new_event ON results_new(distance, stroke, course, gender)",
     ]
     for idx in indexes:
         cur_p.execute(idx)
         pg_conn.commit()
 
-    # Verify
+    # --- Step 4: Atomic swap ---
+    # DROP CASCADE on the old table removes its indexes, avoiding name conflicts
+    print("Swapping tables (atomic rename)...")
+    cur_p.execute("BEGIN")
+    cur_p.execute("DROP TABLE IF EXISTS results_old CASCADE")
+    cur_p.execute("DROP TABLE IF EXISTS results CASCADE")
+    cur_p.execute("ALTER TABLE results_new RENAME TO results")
+    cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_swimmer_id RENAME TO idx_results_swimmer_id")
+    cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_swimmer_name RENAME TO idx_results_swimmer_name")
+    cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_club RENAME TO idx_results_club")
+    cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_competition_id RENAME TO idx_results_competition_id")
+    cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_date RENAME TO idx_results_date")
+    cur_p.execute("ALTER INDEX IF EXISTS idx_results_new_event RENAME TO idx_results_event")
+    pg_conn.commit()
+    print("Swap complete.")
+
+    # --- Verify ---
     cur_p.execute("SELECT COUNT(*) FROM results")
     pg_count = cur_p.fetchone()[0]
     print(f"\nDone! SQLite: {total:,} rows → Postgres: {pg_count:,} rows")

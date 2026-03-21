@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 
 BASE_URL = "https://hkgswimming.org.hk"
 LIST_URL = f"{BASE_URL}/zh-hant/activities/16/"
-OUTPUT_DIR = "/Users/jhnl/hkg-swimming/results_pdfs"
+OUTPUT_DIR = "/Users/jhnl/hkg-swimming/data/pdf/local_competition"
 TOTAL_PAGES = 12
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -50,7 +50,11 @@ def get_event_links_from_page(page_num):
 
 
 def get_pdf_links_from_event(event_url):
-    """Get all PDF savefile links from an event page."""
+    """Get result PDF savefile links from an event page.
+
+    Only downloads PDFs labeled 比賽賽果 (competition results), skipping
+    team scores (團體成績), staff lists (工作人員名單), schedules (比賽賽程), etc.
+    """
     resp = session.get(event_url, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -58,10 +62,16 @@ def get_pdf_links_from_event(event_url):
     pdf_links = []
     for a in soup.find_all("a", href=True):
         href = a["href"]
-        if "savefile" in href:
-            full_url = urljoin(BASE_URL, href)
-            if full_url not in pdf_links:
-                pdf_links.append(full_url)
+        if "savefile" not in href:
+            continue
+        # Check the preceding file-name label
+        label_div = a.find_previous("div", class_="file-name")
+        label = label_div.get_text(strip=True) if label_div else ""
+        if label and label != "比賽賽果":
+            continue
+        full_url = urljoin(BASE_URL, href)
+        if full_url not in pdf_links:
+            pdf_links.append(full_url)
 
     return pdf_links
 

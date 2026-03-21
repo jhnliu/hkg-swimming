@@ -1,6 +1,15 @@
 import { neon } from "@neondatabase/serverless";
+import clubNamesData from "./club-names.json";
 
 const sql = neon(process.env.DATABASE_URL!);
+
+// --- Club name lookup ---
+
+const clubNames = clubNamesData as Record<string, { en: string; zh: string }>;
+
+export function getClubName(code: string, lang: "en" | "zh" = "en"): string {
+  return clubNames[code]?.[lang] || code;
+}
 
 // --- Helper: parse time string to seconds (done in JS instead of SQL) ---
 
@@ -77,6 +86,8 @@ export interface PersonalBest {
   date: string;
   age: number;
   competition_id: string;
+  competition_name?: string;
+  place?: number | null;
 }
 
 // --- Time conversion SQL fragment for Postgres ---
@@ -155,6 +166,37 @@ export async function getCompetitionResults(competitionId: string): Promise<Resu
   return rows as Result[];
 }
 
+export async function getCompetitionResultsByEvent(
+  competitionId: string,
+  eventNum: number
+): Promise<Result[]> {
+  const rows = await sql`
+    SELECT * FROM results
+    WHERE competition_id = ${competitionId}
+      AND event_num = ${eventNum}
+    ORDER BY
+      CASE WHEN place IS NULL THEN 1 ELSE 0 END,
+      place
+  `;
+  return rows as Result[];
+}
+
+export async function getCompetitionResultsBySwimmer(
+  competitionId: string,
+  swimmerQuery: string
+): Promise<Result[]> {
+  const pattern = `%${swimmerQuery}%`;
+  const rows = await sql`
+    SELECT * FROM results
+    WHERE competition_id = ${competitionId}
+      AND REPLACE(swimmer_name, ',', '') ILIKE ${pattern}
+    ORDER BY event_num,
+      CASE WHEN place IS NULL THEN 1 ELSE 0 END,
+      place
+  `;
+  return rows as Result[];
+}
+
 export async function getSwimmer(id: string): Promise<Swimmer | undefined> {
   const rows = await sql`
     SELECT swimmer_id as id, swimmer_name as name, gender, club
@@ -192,6 +234,32 @@ export async function getSwimmerResults(swimmerId: string): Promise<Result[]> {
   return rows as Result[];
 }
 
+export async function getSwimmerCompetitions(
+  swimmerId: string
+): Promise<{ id: string; name: string; date: string; course: string }[]> {
+  const rows = await sql`
+    SELECT DISTINCT competition_id as id, competition_name as name,
+      MIN(date) as date, course
+    FROM results
+    WHERE swimmer_id = ${swimmerId} AND competition_id != ''
+    GROUP BY competition_id, competition_name, course
+    ORDER BY MIN(date) DESC
+  `;
+  return rows as { id: string; name: string; date: string; course: string }[];
+}
+
+export async function getSwimmerResultsInCompetition(
+  swimmerId: string,
+  competitionId: string
+): Promise<Result[]> {
+  const rows = await sql`
+    SELECT * FROM results
+    WHERE swimmer_id = ${swimmerId} AND competition_id = ${competitionId}
+    ORDER BY event_num
+  `;
+  return rows as Result[];
+}
+
 export interface TimePoint {
   date: string;
   time_seconds: number;
@@ -224,7 +292,7 @@ export async function getSwimmerPersonalBests(
       swimmer_id, swimmer_name, club, distance, stroke, course,
       finals_time as time,
       ${sql.unsafe(TIME_TO_SECONDS)} as time_seconds,
-      date, age, competition_id
+      date, age, competition_id, competition_name, place
     FROM results
     WHERE swimmer_id = ${swimmerId}
       AND ${sql.unsafe(VALID_TIME_FILTER)}
@@ -252,28 +320,85 @@ export async function getSwimmerStats(swimmerId: string) {
   };
 }
 
+export interface LeaderboardFilters {
+  gender?: string;
+  ageGroup?: string;
+  season?: string;
+}
+
 export async function getLeaderboard(
   eventKey: string,
-  limit: number = 20
+  limit: number = 20,
+  filters: LeaderboardFilters = {}
 ): Promise<PersonalBest[]> {
   const [stroke, distance, course] = eventKey.split("_");
-  const rows = await sql`
+
+  const conditions: string[] = [
+    `stroke = '${stroke.replace(/'/g, "''")}'`,
+    `distance = '${distance.replace(/'/g, "''")}'`,
+    `course = '${course.replace(/'/g, "''")}'`,
+  ];
+
+  if (filters.gender === "Male") conditions.push("gender IN ('Men', 'Boys')");
+  else if (filters.gender === "Female") conditions.push("gender IN ('Women', 'Girls')");
+
+  if (filters.ageGroup) {
+    conditions.push(`age_group = '${filters.ageGroup.replace(/'/g, "''")}'`);
+  }
+
+  if (filters.season) {
+    const startYear = parseInt(filters.season.split("-")[0]);
+    if (!isNaN(startYear)) {
+      conditions.push(`date >= '${startYear}-07-01'`);
+      conditions.push(`date < '${startYear + 1}-07-01'`);
+    }
+  }
+
+  const where = conditions.join(" AND ");
+
+  const rows = await sql`${sql.unsafe(`
     WITH best_times AS (
       SELECT DISTINCT ON (swimmer_id)
         swimmer_id, swimmer_name, club, distance, stroke, course,
         finals_time as time,
-        ${sql.unsafe(TIME_TO_SECONDS)} as time_seconds,
+        ${TIME_TO_SECONDS} as time_seconds,
         date, age, competition_id
       FROM results
-      WHERE stroke = ${stroke} AND distance = ${distance} AND course = ${course}
-        AND ${sql.unsafe(VALID_TIME_FILTER)}
-      ORDER BY swimmer_id, ${sql.unsafe(TIME_TO_SECONDS)} ASC
+      WHERE ${where}
+        AND ${VALID_TIME_FILTER.trim()}
+      ORDER BY swimmer_id, ${TIME_TO_SECONDS} ASC
     )
     SELECT * FROM best_times
     ORDER BY time_seconds
     LIMIT ${limit}
-  `;
-  return rows as PersonalBest[];
+  `)}`;
+  return rows as unknown as PersonalBest[];
+}
+
+export async function getLeaderboardFilterOptions(): Promise<{
+  genders: string[];
+  ageGroups: string[];
+  seasons: string[];
+}> {
+  const [ageGroups, seasons] = await Promise.all([
+    sql`SELECT DISTINCT age_group FROM results WHERE age_group != '' AND stroke NOT LIKE '%Relay%' ORDER BY age_group`,
+    sql`
+      SELECT DISTINCT
+        CASE WHEN CAST(SUBSTRING(date FROM 6 FOR 2) AS INTEGER) >= 7
+          THEN SUBSTRING(date FROM 1 FOR 4) || '-' || (CAST(SUBSTRING(date FROM 1 FOR 4) AS INTEGER) + 1)
+          ELSE (CAST(SUBSTRING(date FROM 1 FOR 4) AS INTEGER) - 1) || '-' || SUBSTRING(date FROM 1 FOR 4)
+        END as season
+      FROM results
+      WHERE date != ''
+      ORDER BY season DESC
+    `,
+  ]);
+
+  return {
+    genders: ["Male", "Female"],
+    ageGroups: ageGroups.map((r) => r.age_group as string),
+    seasons: seasons.map((r) => r.season as string),
+  };
 }
 
 export async function getLeaderboardEventKeys(): Promise<string[]> {
@@ -293,7 +418,7 @@ export async function getLeaderboardEventKeys(): Promise<string[]> {
     });
 }
 
-export async function getClubs(): Promise<{ code: string; swimmer_count: number }[]> {
+export async function getClubs(): Promise<{ code: string; name_en: string; name_zh: string; swimmer_count: number }[]> {
   const rows = await sql`
     SELECT club as code, COUNT(DISTINCT swimmer_id) as swimmer_count
     FROM results
@@ -301,7 +426,11 @@ export async function getClubs(): Promise<{ code: string; swimmer_count: number 
     GROUP BY club
     ORDER BY club
   `;
-  return rows as { code: string; swimmer_count: number }[];
+  return (rows as { code: string; swimmer_count: number }[]).map((r) => ({
+    ...r,
+    name_en: getClubName(r.code, "en"),
+    name_zh: getClubName(r.code, "zh"),
+  }));
 }
 
 export async function getClubSwimmers(
@@ -362,20 +491,34 @@ export async function search(query: string, limit: number = 30): Promise<SearchR
     });
   }
 
-  const clubs = await sql`
+  // Also search by full club name
+  const matchingClubCodes = Object.entries(clubNames)
+    .filter(([code, names]) =>
+      code.toLowerCase().includes(query.trim().toLowerCase()) ||
+      names.en.toLowerCase().includes(query.trim().toLowerCase()) ||
+      names.zh.includes(query.trim())
+    )
+    .map(([code]) => code);
+
+  const clubCodeList = matchingClubCodes.length > 0
+    ? matchingClubCodes.map((c) => `'${c.replace(/'/g, "''")}'`).join(",")
+    : "''";
+
+  const clubs = await sql`${sql.unsafe(`
     SELECT club as code, COUNT(DISTINCT swimmer_id) as swimmer_count
     FROM results
-    WHERE club ILIKE ${pattern}
+    WHERE club ILIKE '${query.trim().replace(/'/g, "''")}%' OR club IN (${clubCodeList})
     GROUP BY club
     ORDER BY COUNT(DISTINCT swimmer_id) DESC
     LIMIT 5
-  `;
+  `)}`;
 
   for (const c of clubs) {
+    const clubFullName = getClubName(c.code as string, "en");
     results.push({
       type: "club",
       id: c.code as string,
-      name: c.code as string,
+      name: clubFullName !== c.code ? `${clubFullName} (${c.code})` : (c.code as string),
       subtitle: `${c.swimmer_count} swimmers`,
     });
   }
@@ -761,6 +904,104 @@ export async function submitFeedback(data: {
     RETURNING id, name, category, title, description, status, created_at::TEXT
   `;
   return rows[0] as FeedbackItem;
+}
+
+export async function updateFeedbackStatus(
+  id: number,
+  status: string,
+  adminNote: string
+): Promise<void> {
+  await sql`
+    UPDATE feedback
+    SET status = ${status}
+    WHERE id = ${id}
+  `;
+}
+
+// --- Appeals ---
+
+export interface AppealItem {
+  id: number;
+  appeal_type: string;
+  submitter_name: string;
+  submitter_email: string | null;
+  swimmer_name: string;
+  swimmer_id: string | null;
+  competition_name: string | null;
+  event_description: string | null;
+  recorded_time: string | null;
+  reason: string;
+  requested_change: string;
+  status: string;
+  admin_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export async function getAppeals(): Promise<AppealItem[]> {
+  const rows = await sql`
+    SELECT id, appeal_type, submitter_name, submitter_email, swimmer_name, swimmer_id,
+      competition_name, event_description, recorded_time, reason,
+      requested_change, status, admin_note, created_at::TEXT, reviewed_at::TEXT
+    FROM appeals
+    ORDER BY created_at DESC
+  `;
+  return rows as AppealItem[];
+}
+
+export async function getAppealsByStatus(status: string): Promise<AppealItem[]> {
+  const rows = await sql`
+    SELECT id, appeal_type, submitter_name, submitter_email, swimmer_name, swimmer_id,
+      competition_name, event_description, recorded_time, reason,
+      requested_change, status, admin_note, created_at::TEXT, reviewed_at::TEXT
+    FROM appeals
+    WHERE status = ${status}
+    ORDER BY created_at DESC
+  `;
+  return rows as AppealItem[];
+}
+
+export async function submitAppeal(data: {
+  appeal_type: string;
+  submitter_name: string;
+  submitter_email: string;
+  swimmer_name: string;
+  swimmer_id: string;
+  competition_name: string;
+  event_description: string;
+  recorded_time: string;
+  reason: string;
+  requested_change: string;
+}): Promise<AppealItem> {
+  const rows = await sql`
+    INSERT INTO appeals (appeal_type, submitter_name, submitter_email, swimmer_name, swimmer_id,
+      competition_name, event_description, recorded_time, reason, requested_change)
+    VALUES (${data.appeal_type || "correction"}, ${data.submitter_name || "Anonymous"},
+      ${data.submitter_email || null},
+      ${data.swimmer_name}, ${data.swimmer_id || null}, ${data.competition_name || null},
+      ${data.event_description || null}, ${data.recorded_time || null},
+      ${data.reason}, ${data.requested_change})
+    RETURNING id, appeal_type, submitter_name, submitter_email, swimmer_name, swimmer_id,
+      competition_name, event_description, recorded_time, reason,
+      requested_change, status, admin_note, created_at::TEXT, reviewed_at::TEXT
+  `;
+  return rows[0] as AppealItem;
+}
+
+export async function reviewAppeal(
+  id: number,
+  status: "approved" | "rejected",
+  adminNote: string
+): Promise<AppealItem> {
+  const rows = await sql`
+    UPDATE appeals
+    SET status = ${status}, admin_note = ${adminNote}, reviewed_at = NOW()
+    WHERE id = ${id}
+    RETURNING id, appeal_type, submitter_name, submitter_email, swimmer_name, swimmer_id,
+      competition_name, event_description, recorded_time, reason,
+      requested_change, status, admin_note, created_at::TEXT, reviewed_at::TEXT
+  `;
+  return rows[0] as AppealItem;
 }
 
 // --- Formatting helpers ---

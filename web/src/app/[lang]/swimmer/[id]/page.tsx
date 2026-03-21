@@ -10,22 +10,34 @@ import {
   getSwimmerTimeHistory,
   formatStroke,
   formatStrokeZh,
+  getClubName,
 } from "@/lib/db";
 import type { PersonalBest } from "@/lib/db";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { PbChart } from "@/components/pb-chart";
+import { alternatesForPath, ogMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ lang: string; id: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { lang, id } = await params;
+  const locale = (isLocale(lang) ? lang : "en") as Locale;
+  const dict = await getDictionary(locale);
   const swimmer = await getSwimmer(decodeURIComponent(id));
+  if (!swimmer) return { title: "Swimmer" };
+  const gender = swimmer.gender === "Men" || swimmer.gender === "Boys" ? dict.common.male : dict.common.female;
+  const description = dict.seo.swimmerDescription
+    .replace("{name}", swimmer.name)
+    .replace("{club}", swimmer.club)
+    .replace("{gender}", gender);
+  const path = `/swimmer/${id}`;
   return {
-    title: swimmer
-      ? `${swimmer.name} — HKG Swimming`
-      : "Swimmer — HKG Swimming",
+    title: swimmer.name,
+    description,
+    alternates: alternatesForPath(path),
+    openGraph: ogMeta({ title: swimmer.name, description, path, lang: locale }),
   };
 }
 
@@ -33,10 +45,12 @@ function PbTable({
   pbs,
   lang,
   label,
+  dict,
 }: {
   pbs: PersonalBest[];
   lang: Locale;
   label: string;
+  dict: { event: string; time: string; age: string; date: string; place: string; competition: string };
 }) {
   if (pbs.length === 0) return null;
   return (
@@ -49,16 +63,19 @@ function PbTable({
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-pool-border bg-pool-surface dark:border-pool-border dark:bg-surface-alt">
               <th className="px-3 py-2 text-left font-semibold text-pool-deep dark:text-pool-light">
-                Event
+                {dict.event}
               </th>
               <th className="px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light">
-                Time
+                {dict.time}
+              </th>
+              <th className="px-3 py-2 text-center font-semibold text-pool-deep dark:text-pool-light">
+                {dict.place}
               </th>
               <th className="px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light">
-                Age
+                {dict.age}
               </th>
               <th className="px-3 py-2 text-right font-semibold text-pool-deep dark:text-pool-light">
-                Date
+                {dict.competition}
               </th>
             </tr>
           </thead>
@@ -79,11 +96,24 @@ function PbTable({
                 <td className="px-3 py-2 text-right font-mono text-foreground timing-display">
                   {pb.time}
                 </td>
+                <td className="px-3 py-2 text-center text-muted dark:text-pool-light/60">
+                  {pb.place != null ? pb.place : "–"}
+                </td>
                 <td className="px-3 py-2 text-right text-muted dark:text-pool-light/60">
                   {pb.age}
                 </td>
-                <td className="px-3 py-2 text-right text-muted dark:text-pool-light/60">
-                  {pb.date}
+                <td className="px-3 py-2 text-right">
+                  {pb.competition_id ? (
+                    <Link
+                      href={`/${lang}/competition/${encodeURIComponent(pb.competition_id)}`}
+                      className="text-xs text-muted hover:text-pool-mid dark:text-pool-light/60 dark:hover:text-pool-light"
+                      title={pb.competition_name || ""}
+                    >
+                      {pb.date}
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-muted dark:text-pool-light/60">{pb.date}</span>
+                  )}
                 </td>
               </tr>
             ))}
@@ -121,7 +151,7 @@ export default async function SwimmerPage({
           lang={lang as Locale}
           items={[
             { label: dict.nav.clubs, href: `/${lang}/clubs` },
-            { label: swimmer.club, href: `/${lang}/club/${swimmer.club}` },
+            { label: getClubName(swimmer.club, lang === "zh" ? "zh" : "en"), href: `/${lang}/club/${swimmer.club}` },
             { label: swimmer.name },
           ]}
         />
@@ -134,6 +164,7 @@ export default async function SwimmerPage({
             <Link
               href={`/${lang}/club/${swimmer.club}`}
               className="rounded bg-pool-surface px-2 py-0.5 font-medium text-pool-deep dark:bg-surface-alt dark:text-pool-light"
+              title={getClubName(swimmer.club, lang === "zh" ? "zh" : "en")}
             >
               {swimmer.club}
             </Link>
@@ -173,6 +204,7 @@ export default async function SwimmerPage({
               <Link
                 href={`/${lang}/club/${ch.club}`}
                 className="font-medium text-pool-mid hover:text-pool-deep dark:text-pool-light dark:hover:text-white"
+                title={getClubName(ch.club, lang === "zh" ? "zh" : "en")}
               >
                 {ch.club}
               </Link>
@@ -195,11 +227,27 @@ export default async function SwimmerPage({
             pbs={pbsSC}
             lang={lang as Locale}
             label={dict.swimmer.shortCourse}
+            dict={{
+              event: dict.swimmer.event,
+              time: dict.swimmer.time,
+              age: dict.swimmer.age,
+              date: dict.swimmer.date,
+              place: dict.common.place,
+              competition: lang === "en" ? "Competition" : "比賽",
+            }}
           />
           <PbTable
             pbs={pbsLC}
             lang={lang as Locale}
             label={dict.swimmer.longCourse}
+            dict={{
+              event: dict.swimmer.event,
+              time: dict.swimmer.time,
+              age: dict.swimmer.age,
+              date: dict.swimmer.date,
+              place: dict.common.place,
+              competition: lang === "en" ? "Competition" : "比賽",
+            }}
           />
         </div>
       </section>

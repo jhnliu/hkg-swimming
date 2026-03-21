@@ -25,6 +25,8 @@ export interface Dict {
     compare: string;
     trends: string;
     feedback: string;
+    appeals: string;
+    changelog: string;
   };
   home: {
     title: string;
@@ -56,6 +58,13 @@ export interface Dict {
     date: string;
     course: string;
     tier: string;
+    searchPlaceholder: string;
+    filterByEvent: string;
+    allEvents: string;
+    showAll: string;
+    collapseAll: string;
+    noMatches: string;
+    loadingResults: string;
   };
   leaderboard: {
     title: string;
@@ -85,6 +94,71 @@ export interface Dict {
     openLabel: string;
     resolvedLabel: string;
     noItems: string;
+  };
+  appeals: {
+    title: string;
+    subtitle: string;
+    submitTitle: string;
+    typeCorrection: string;
+    typeMissing: string;
+    typeCorrectionDesc: string;
+    typeMissingDesc: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    emailLabel: string;
+    emailPlaceholder: string;
+    swimmerNameLabel: string;
+    swimmerNamePlaceholder: string;
+    swimmerIdLabel: string;
+    swimmerIdPlaceholder: string;
+    competitionLabel: string;
+    competitionPlaceholder: string;
+    eventLabel: string;
+    eventPlaceholder: string;
+    recordedTimeLabel: string;
+    recordedTimePlaceholder: string;
+    missingSwimmerPlaceholder: string;
+    missingCompetitionPlaceholder: string;
+    missingEventPlaceholder: string;
+    missingTimePlaceholder: string;
+    reasonLabel: string;
+    reasonPlaceholder: string;
+    missingReasonPlaceholder: string;
+    requestedChangeLabel: string;
+    requestedChangePlaceholder: string;
+    missingRequestedChangePlaceholder: string;
+    submitButton: string;
+    thankYou: string;
+    errorMissing: string;
+    listTitle: string;
+    pendingLabel: string;
+    approvedLabel: string;
+    rejectedLabel: string;
+    correctionLabel: string;
+    missing_recordLabel: string;
+    noItems: string;
+    adminNote: string;
+    reviewedAt: string;
+  };
+  changelog: {
+    title: string;
+    subtitle: string;
+  };
+  seo: {
+    siteDescription: string;
+    clubsDescription: string;
+    competitionsDescription: string;
+    leaderboardsDescription: string;
+    searchDescription: string;
+    compareDescription: string;
+    trendsDescription: string;
+    feedbackDescription: string;
+    changelogDescription: string;
+    swimmerDescription: string;
+    competitionDescription: string;
+    clubDescription: string;
+    longCourse: string;
+    shortCourse: string;
   };
   common: {
     male: string;

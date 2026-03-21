@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getCompetitions, getDbStats, tierLabel } from "@/lib/db";
+import { alternatesForPath } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  alternates: alternatesForPath(""),
+};
 
 export default async function HomePage({
   params,

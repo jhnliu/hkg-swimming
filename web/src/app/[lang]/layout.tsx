@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { Nav } from "@/components/nav";
+import { SetLang } from "@/components/set-lang";
 
 export function generateStaticParams() {
   return [{ lang: "en" }, { lang: "zh" }];
@@ -21,6 +22,7 @@ export default async function LangLayout({
 
   return (
     <>
+      <SetLang lang={lang} />
       <Nav lang={lang as Locale} dict={dict} />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
         {children}

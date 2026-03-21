@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pdfplumber
 
-PDF_DIR = Path("/Users/jhnl/hkg-swimming/results_pdfs")
-OUTPUT_DIR = Path("/Users/jhnl/hkg-swimming/results_csv")
+PDF_DIR = Path("/Users/jhnl/hkg-swimming/data/pdf/local_competition")
+OUTPUT_DIR = Path("/Users/jhnl/hkg-swimming/data/csv/local_competition")
 
 # ---------- regex patterns ----------
 
@@ -71,7 +71,7 @@ RESULT_RE = re.compile(
     r"(\d{4,5}\s*[#@^A-Z0-9 ]*?)\s+"              # ID# (e.g. "30192 B", "22447 #IAZ", "48950 @P", "47700 #@ICO")
     r"([A-Z][a-z].+?)\s+"                          # name (starts with uppercase letter then lowercase)
     r"(\d{1,2})\s+"                                 # age
-    r"(\*?[A-Z]{2,4})\s+"                           # team (may start with *)
+    r"([#*]?[A-Z0-9]{2,4})\s+"                        # team (may start with # or *, can contain digits)
     r"(.+?)\s+"                                     # seed time
     r"(.+?)$"                                       # finals time + optional standard
 )

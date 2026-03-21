@@ -6,6 +6,7 @@ import type { Locale } from "@/lib/i18n";
 import {
   getClubSwimmers,
   getClubAnalytics,
+  getClubName,
 } from "@/lib/db";
 import { Breadcrumb } from "@/components/breadcrumb";
 import {
@@ -14,15 +15,25 @@ import {
   GenderPie,
   StrokeTable,
 } from "@/components/club-charts";
+import { alternatesForPath, ogMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ lang: string; code: string }>;
 }): Promise<Metadata> {
-  const { code } = await params;
+  const { lang, code } = await params;
+  const locale = (isLocale(lang) ? lang : "en") as Locale;
+  const dict = await getDictionary(locale);
+  const clubName = getClubName(code, locale);
+  const displayName = clubName !== code ? `${clubName} (${code})` : code;
+  const description = dict.seo.clubDescription.replace("{code}", displayName);
+  const path = `/club/${code}`;
   return {
-    title: `${code} — HKG Swimming`,
+    title: displayName,
+    description,
+    alternates: alternatesForPath(path),
+    openGraph: ogMeta({ title: displayName, description, path, lang: locale }),
   };
 }
 
@@ -47,6 +58,7 @@ export default async function ClubPage({
   const femaleCount = swimmers.length - maleCount;
 
   const en = lang === "en";
+  const clubName = getClubName(code, en ? "en" : "zh");
 
   return (
     <div className="flex flex-col gap-8">
@@ -55,13 +67,18 @@ export default async function ClubPage({
           lang={lang as Locale}
           items={[
             { label: dict.nav.clubs, href: `/${lang}/clubs` },
-            { label: code },
+            { label: clubName !== code ? clubName : code },
           ]}
         />
         <h1 className="text-3xl font-bold text-foreground">
           <span className="mr-3 rounded bg-pool-surface px-3 py-1 font-mono text-2xl dark:bg-surface-alt">
             {code}
           </span>
+          {clubName !== code && (
+            <span className="text-xl font-medium text-foreground/70">
+              {clubName}
+            </span>
+          )}
         </h1>
       </div>
 
