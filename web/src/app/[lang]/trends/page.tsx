@@ -61,11 +61,12 @@ export default async function TrendsPage({
   if (!isLocale(lang)) notFound();
   const { stroke, course, gender, club } = await searchParams;
 
-  const dict = await getDictionary(lang as Locale);
-  const filterOptions = await getTrendFilterOptions();
-
-  const improvers = await getBiggestImprovers(30, { stroke, course, gender, club });
-  const breakthroughs = await getBreakthroughSwims(30);
+  const [dict, filterOptions, improvers, breakthroughs] = await Promise.all([
+    getDictionary(lang as Locale),
+    getTrendFilterOptions(),
+    getBiggestImprovers(30, { stroke, course, gender, club }),
+    getBreakthroughSwims(30),
+  ]);
 
   const hasFilters = !!(stroke || course || gender || club);
 

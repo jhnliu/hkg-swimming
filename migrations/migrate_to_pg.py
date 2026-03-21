@@ -133,6 +133,10 @@ def main():
         "CREATE INDEX idx_results_new_event ON results_new(distance, stroke, course, gender)",
         # Composite index for leaderboard queries — time_seconds enables fast sorted lookups
         "CREATE INDEX idx_results_new_leaderboard ON results_new(stroke, distance, course, time_seconds) WHERE time_seconds IS NOT NULL",
+        # Composite index for competition listing queries
+        "CREATE INDEX idx_results_new_competition ON results_new(competition_id, competition_name, course, date)",
+        # Composite index for biggest improvers queries
+        "CREATE INDEX idx_results_new_improvers ON results_new(stroke, date, time_seconds) WHERE time_seconds IS NOT NULL",
     ]
     for idx in indexes:
         cur_p.execute(idx)

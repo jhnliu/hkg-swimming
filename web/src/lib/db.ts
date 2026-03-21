@@ -92,29 +92,47 @@ export interface PersonalBest {
 }
 
 // Valid competitive time: has a parsed time, not a DQ/scratch, not a relay
-const VALID_TIME_FILTER = `time_seconds IS NOT NULL AND time_standard NOT IN ('SCR', 'DQ', 'DNF', 'NS') AND stroke NOT LIKE '%Relay%'`;
+const VALID_TIME_FILTER = `time_seconds IS NOT NULL AND time_standard NOT IN ('SCR', 'DQ', 'DNF', 'NS') AND stroke != 'Freestyle Relay'`;
 
 // --- Queries ---
 
-export async function getCompetitions(): Promise<Competition[]> {
-  const rows = await sql`
-    SELECT DISTINCT competition_id as id, competition_name as name,
-      MIN(date) as date, course,
-      CASE
-        WHEN LOWER(competition_name) LIKE '%open%' THEN 'open'
-        WHEN LOWER(competition_name) LIKE '%championship%' THEN 'championship'
-        WHEN LOWER(competition_name) LIKE '%time trial%' OR LOWER(competition_name) LIKE '%計時賽%' THEN 'timetrial'
-        WHEN LOWER(competition_name) LIKE '%div.i %' OR LOWER(competition_name) LIKE '%第一組%' THEN 'div1'
-        WHEN LOWER(competition_name) LIKE '%div.ii%' OR LOWER(competition_name) LIKE '%第二組%' THEN 'div2'
-        WHEN LOWER(competition_name) LIKE '%div.iii%' OR LOWER(competition_name) LIKE '%第三組%' THEN 'div3'
-        ELSE 'other'
-      END as tier
-    FROM results
-    WHERE competition_id != ''
-    GROUP BY competition_id, competition_name, course
-    ORDER BY MIN(date) DESC
-  `;
-  return rows as Competition[];
+function classifyTier(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.includes("open")) return "open";
+  if (lower.includes("championship")) return "championship";
+  if (lower.includes("time trial") || name.includes("計時賽")) return "timetrial";
+  if (lower.includes("div.i ") || name.includes("第一組")) return "div1";
+  if (lower.includes("div.ii") || name.includes("第二組")) return "div2";
+  if (lower.includes("div.iii") || name.includes("第三組")) return "div3";
+  return "other";
+}
+
+export const getCompetitions = unstable_cache(
+  async (): Promise<Competition[]> => {
+    const rows = await sql`
+      SELECT competition_id as id, competition_name as name,
+        MIN(date) as date, course
+      FROM results
+      WHERE competition_id != ''
+      GROUP BY competition_id, competition_name, course
+      ORDER BY MIN(date) DESC
+    `;
+    return (rows as Competition[]).map((r) => ({ ...r, tier: classifyTier(r.name) }));
+  },
+  ["competitions"],
+  { revalidate: 86400 }
+);
+
+export async function getCompetitionsPaginated(
+  page: number = 1,
+  limit: number = 20
+): Promise<{ competitions: Competition[]; total: number }> {
+  const all = await getCompetitions();
+  const offset = (page - 1) * limit;
+  return {
+    competitions: all.slice(offset, offset + limit),
+    total: all.length,
+  };
 }
 
 export async function getCompetition(id: string): Promise<Competition | undefined> {
@@ -175,23 +193,24 @@ export async function getCompetitionResultsBySwimmer(
 }
 
 export async function getSwimmer(id: string): Promise<Swimmer | undefined> {
-  const rows = await sql`
-    SELECT swimmer_id as id, swimmer_name as name, gender, club
-    FROM results
-    WHERE swimmer_id = ${id}
-    ORDER BY date DESC
-    LIMIT 1
-  `;
+  const [rows, clubs] = await Promise.all([
+    sql`
+      SELECT swimmer_id as id, swimmer_name as name, gender, club
+      FROM results
+      WHERE swimmer_id = ${id}
+      ORDER BY date DESC
+      LIMIT 1
+    `,
+    sql`
+      SELECT club, MIN(date) as first_seen, MAX(date) as last_seen
+      FROM results
+      WHERE swimmer_id = ${id} AND club != ''
+      GROUP BY club
+      ORDER BY MIN(date)
+    `,
+  ]);
   if (rows.length === 0) return undefined;
   const row = rows[0];
-
-  const clubs = await sql`
-    SELECT club, MIN(date) as first_seen, MAX(date) as last_seen
-    FROM results
-    WHERE swimmer_id = ${id} AND club != ''
-    GROUP BY club
-    ORDER BY MIN(date)
-  `;
 
   return {
     id: row.id as string,
@@ -444,28 +463,30 @@ export const getLeaderboardFilterOptions = unstable_cache(
     ageGroups: string[];
     seasons: string[];
   }> => {
-    const [ageGroups, seasons] = await Promise.all([
-      sql`SELECT DISTINCT age_group FROM results WHERE age_group != '' AND stroke NOT LIKE '%Relay%' ORDER BY age_group`,
-      sql`
-        SELECT DISTINCT
-          CASE WHEN CAST(SUBSTRING(date FROM 6 FOR 2) AS INTEGER) >= 7
-            THEN SUBSTRING(date FROM 1 FOR 4) || '-' || (CAST(SUBSTRING(date FROM 1 FOR 4) AS INTEGER) + 1)
-            ELSE (CAST(SUBSTRING(date FROM 1 FOR 4) AS INTEGER) - 1) || '-' || SUBSTRING(date FROM 1 FOR 4)
-          END as season
-        FROM results
-        WHERE date != ''
-        ORDER BY season DESC
-      `,
+    const [ageGroups, competitions] = await Promise.all([
+      sql`SELECT DISTINCT age_group FROM results WHERE age_group != '' AND stroke != 'Freestyle Relay' ORDER BY age_group`,
+      getCompetitions(),
     ]);
+
+    // Derive seasons from cached competitions list instead of scanning results table
+    const seasonSet = new Set<string>();
+    for (const comp of competitions) {
+      if (!comp.date) continue;
+      const year = parseInt(comp.date.slice(0, 4));
+      const month = parseInt(comp.date.slice(5, 7));
+      const season = month >= 7 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+      seasonSet.add(season);
+    }
+    const seasons = [...seasonSet].sort().reverse();
 
     return {
       genders: ["Male", "Female"],
       ageGroups: ageGroups.map((r) => r.age_group as string),
-      seasons: seasons.map((r) => r.season as string),
+      seasons,
     };
   },
   ["leaderboard-filter-options"],
-  { revalidate: 3600 }
+  { revalidate: 86400 }
 );
 
 export const getLeaderboardEventKeys = unstable_cache(
@@ -489,20 +510,24 @@ export const getLeaderboardEventKeys = unstable_cache(
   { revalidate: 3600 }
 );
 
-export async function getClubs(): Promise<{ code: string; name_en: string; name_zh: string; swimmer_count: number }[]> {
-  const rows = await sql`
-    SELECT club as code, COUNT(DISTINCT swimmer_id) as swimmer_count
-    FROM results
-    WHERE club != ''
-    GROUP BY club
-    ORDER BY club
-  `;
-  return (rows as { code: string; swimmer_count: number }[]).map((r) => ({
-    ...r,
-    name_en: getClubName(r.code, "en"),
-    name_zh: getClubName(r.code, "zh"),
-  }));
-}
+export const getClubs = unstable_cache(
+  async (): Promise<{ code: string; name_en: string; name_zh: string; swimmer_count: number }[]> => {
+    const rows = await sql`
+      SELECT club as code, COUNT(DISTINCT swimmer_id) as swimmer_count
+      FROM results
+      WHERE club != ''
+      GROUP BY club
+      ORDER BY club
+    `;
+    return (rows as { code: string; swimmer_count: number }[]).map((r) => ({
+      ...r,
+      name_en: getClubName(r.code, "en"),
+      name_zh: getClubName(r.code, "zh"),
+    }));
+  },
+  ["clubs"],
+  { revalidate: 3600 }
+);
 
 export async function getClubSwimmers(
   clubCode: string
@@ -736,71 +761,79 @@ export async function getBiggestImprovers(
 
   const where = conditions.join(" AND ");
 
-  const rows = await sql`${sql.unsafe(`
-    WITH recent AS (
-      SELECT swimmer_id, swimmer_name, club, distance, stroke, course, gender,
-        finals_time, date,
-        time_seconds
-      FROM results
-      WHERE ${where}
-    ),
-    earliest AS (
-      SELECT swimmer_id, distance, stroke, course,
-        finals_time as time, time_seconds, date,
-        ROW_NUMBER() OVER (PARTITION BY swimmer_id, distance, stroke, course ORDER BY date ASC) as rn
-      FROM recent
-    ),
-    latest AS (
-      SELECT swimmer_id, distance, stroke, course,
-        finals_time as time, time_seconds, date,
-        ROW_NUMBER() OVER (PARTITION BY swimmer_id, distance, stroke, course ORDER BY date DESC) as rn
-      FROM recent
-    ),
-    improvements AS (
-      SELECT e.swimmer_id, e.distance, e.stroke, e.course,
-        e.time as old_time, e.time_seconds as old_seconds, e.date as old_date,
-        l.time as new_time, l.time_seconds as new_seconds, l.date as new_date,
-        ROUND(((e.time_seconds - l.time_seconds) / e.time_seconds * 100)::NUMERIC, 2) as improvement_pct,
-        (l.date::DATE - e.date::DATE) as days_between
-      FROM earliest e
-      JOIN latest l ON e.swimmer_id = l.swimmer_id
-        AND e.distance = l.distance AND e.stroke = l.stroke AND e.course = l.course
-      WHERE e.rn = 1 AND l.rn = 1
-        AND l.time_seconds < e.time_seconds
-        AND e.date != l.date
-    )
-    SELECT i.swimmer_id, r.swimmer_name, r.club,
-      i.distance, i.stroke, i.course,
-      i.old_time, i.old_seconds, i.new_time, i.new_seconds,
-      i.improvement_pct, i.old_date, i.new_date, i.days_between
-    FROM improvements i
-    JOIN (SELECT swimmer_id, swimmer_name, club FROM results GROUP BY swimmer_id, swimmer_name, club) r
-      ON i.swimmer_id = r.swimmer_id
-    ORDER BY i.improvement_pct DESC
-    LIMIT ${limit}
-  `)}`;
-  return rows as unknown as Improver[];
+  const cacheKey = [
+    "improvers",
+    filters.stroke || "",
+    filters.course || "",
+    filters.gender || "",
+    filters.club || "",
+    String(limit),
+  ];
+  const cached = unstable_cache(
+    async () => {
+      const rows = await sql`${sql.unsafe(`
+        WITH recent AS (
+          SELECT swimmer_id, swimmer_name, club, distance, stroke, course,
+            finals_time, date, time_seconds,
+            ROW_NUMBER() OVER (PARTITION BY swimmer_id, distance, stroke, course ORDER BY date ASC) as rn_earliest,
+            ROW_NUMBER() OVER (PARTITION BY swimmer_id, distance, stroke, course ORDER BY date DESC) as rn_latest
+          FROM results
+          WHERE ${where}
+        ),
+        improvements AS (
+          SELECT e.swimmer_id, e.swimmer_name, e.club,
+            e.distance, e.stroke, e.course,
+            e.finals_time as old_time, e.time_seconds as old_seconds, e.date as old_date,
+            l.finals_time as new_time, l.time_seconds as new_seconds, l.date as new_date,
+            ROUND(((e.time_seconds - l.time_seconds) / e.time_seconds * 100)::NUMERIC, 2) as improvement_pct,
+            (l.date::DATE - e.date::DATE) as days_between
+          FROM recent e
+          JOIN recent l ON e.swimmer_id = l.swimmer_id
+            AND e.distance = l.distance AND e.stroke = l.stroke AND e.course = l.course
+            AND l.rn_latest = 1
+          WHERE e.rn_earliest = 1
+            AND l.time_seconds < e.time_seconds
+            AND e.date != l.date
+        )
+        SELECT swimmer_id, swimmer_name, club,
+          distance, stroke, course,
+          old_time, old_seconds, new_time, new_seconds,
+          improvement_pct, old_date, new_date, days_between
+        FROM improvements
+        ORDER BY improvement_pct DESC
+        LIMIT ${limit}
+      `)}`;
+      return rows as unknown as Improver[];
+    },
+    cacheKey,
+    { revalidate: 3600 }
+  );
+  return cached();
 }
 
-export async function getTrendFilterOptions(): Promise<{
-  strokes: string[];
-  courses: string[];
-  genders: string[];
-  clubs: string[];
-}> {
-  const [strokes, courses, clubs] = await Promise.all([
-    sql`SELECT DISTINCT stroke FROM results WHERE stroke NOT LIKE '%Relay%' AND stroke != '' ORDER BY stroke`,
-    sql`SELECT DISTINCT course FROM results WHERE course != '' ORDER BY course`,
-    sql`SELECT club, COUNT(DISTINCT swimmer_id) as cnt FROM results WHERE club != '' GROUP BY club HAVING COUNT(DISTINCT swimmer_id) >= 5 ORDER BY club`,
-  ]);
+export const getTrendFilterOptions = unstable_cache(
+  async (): Promise<{
+    strokes: string[];
+    courses: string[];
+    genders: string[];
+    clubs: string[];
+  }> => {
+    const [strokes, courses, clubs] = await Promise.all([
+      sql`SELECT DISTINCT stroke FROM results WHERE stroke != 'Freestyle Relay' AND stroke != '' ORDER BY stroke`,
+      sql`SELECT DISTINCT course FROM results WHERE course != '' ORDER BY course`,
+      sql`SELECT club, COUNT(DISTINCT swimmer_id) as cnt FROM results WHERE club != '' GROUP BY club HAVING COUNT(DISTINCT swimmer_id) >= 5 ORDER BY club`,
+    ]);
 
-  return {
-    strokes: strokes.map((r) => r.stroke as string),
-    courses: courses.map((r) => r.course as string),
-    genders: ["Male", "Female"],
-    clubs: clubs.map((r) => r.club as string),
-  };
-}
+    return {
+      strokes: strokes.map((r) => r.stroke as string),
+      courses: courses.map((r) => r.course as string),
+      genders: ["Male", "Female"],
+      clubs: clubs.map((r) => r.club as string),
+    };
+  },
+  ["trend-filter-options"],
+  { revalidate: 3600 }
+);
 
 export interface Breakthrough {
   swimmer_id: string;
@@ -816,9 +849,10 @@ export interface Breakthrough {
   age: number;
 }
 
-export async function getBreakthroughSwims(limit: number = 20): Promise<Breakthrough[]> {
-  const rows = await sql`
-    WITH standard_results AS (
+export const getBreakthroughSwims = unstable_cache(
+  async (limit: number = 20): Promise<Breakthrough[]> => {
+    const rows = await sql`
+      WITH standard_results AS (
       SELECT swimmer_id, swimmer_name, club, distance, stroke, course,
         finals_time, time_standard, date, competition_name, age,
         ROW_NUMBER() OVER (
@@ -828,7 +862,7 @@ export async function getBreakthroughSwims(limit: number = 20): Promise<Breakthr
       FROM results
       WHERE time_standard IN ('D1', 'QT', 'A', 'B', 'AQT')
         AND finals_time != '' AND finals_time IS NOT NULL
-        AND stroke NOT LIKE '%Relay%'
+        AND stroke != 'Freestyle Relay'
     )
     SELECT swimmer_id, swimmer_name, club, distance, stroke, course,
       finals_time, time_standard, date, competition_name, age
@@ -837,8 +871,11 @@ export async function getBreakthroughSwims(limit: number = 20): Promise<Breakthr
     ORDER BY date DESC
     LIMIT ${limit}
   `;
-  return rows as Breakthrough[];
-}
+    return rows as Breakthrough[];
+  },
+  ["breakthroughs"],
+  { revalidate: 3600 }
+);
 
 // --- Stats ---
 
@@ -851,20 +888,24 @@ export interface DbStats {
   date_to: string;
 }
 
-export async function getDbStats(): Promise<DbStats> {
-  const rows = await sql`
-    SELECT
-      COUNT(*) as total_results,
-      COUNT(DISTINCT swimmer_id) as total_swimmers,
-      COUNT(DISTINCT club) as total_clubs,
-      COUNT(DISTINCT competition_id) as total_competitions,
-      MIN(date) as date_from,
-      MAX(date) as date_to
-    FROM results
-    WHERE swimmer_id != ''
-  `;
-  return rows[0] as DbStats;
-}
+export const getDbStats = unstable_cache(
+  async (): Promise<DbStats> => {
+    const rows = await sql`
+      SELECT
+        COUNT(*) as total_results,
+        COUNT(DISTINCT swimmer_id) as total_swimmers,
+        COUNT(DISTINCT club) as total_clubs,
+        COUNT(DISTINCT competition_id) as total_competitions,
+        MIN(date) as date_from,
+        MAX(date) as date_to
+      FROM results
+      WHERE swimmer_id != ''
+    `;
+    return rows[0] as DbStats;
+  },
+  ["db-stats"],
+  { revalidate: 86400 }
+);
 
 // --- Club analytics ---
 
@@ -913,7 +954,7 @@ export async function getClubAnalytics(clubCode: string) {
         SUM(CASE WHEN place <= 3 THEN 1 ELSE 0 END) as medal_count
       FROM results
       WHERE club = ${clubCode} AND place IS NOT NULL AND place > 0
-        AND stroke NOT LIKE '%Relay%'
+        AND stroke != 'Freestyle Relay'
       GROUP BY stroke
       HAVING COUNT(*) >= 5
       ORDER BY AVG(place) ASC

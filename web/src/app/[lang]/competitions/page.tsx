@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
-import { getCompetitions, tierLabel } from "@/lib/db";
+import { getCompetitionsPaginated, tierLabel } from "@/lib/db";
 import { localizedMeta } from "@/lib/seo";
+
+const PAGE_SIZE = 20;
 
 export async function generateMetadata({
   params,
@@ -19,14 +21,20 @@ export async function generateMetadata({
 
 export default async function CompetitionsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
 
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam || "1") || 1);
+
   const dict = await getDictionary(lang as Locale);
-  const competitions = await getCompetitions();
+  const { competitions, total } = await getCompetitionsPaginated(page, PAGE_SIZE);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   // Group by season (July–June)
   const groups = new Map<string, typeof competitions>();
@@ -78,6 +86,32 @@ export default async function CompetitionsPage({
           </div>
         </section>
       ))}
+
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-center gap-2 pt-4" aria-label="Pagination">
+          {page > 1 && (
+            <Link
+              href={`/${lang}/competitions${page === 2 ? "" : `?page=${page - 1}`}`}
+              className="rounded-lg border border-pool-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:border-pool-mid hover:shadow-md dark:border-pool-border dark:bg-surface dark:hover:border-pool-light"
+            >
+              {lang === "zh" ? "上一頁" : "Previous"}
+            </Link>
+          )}
+          <span className="px-3 py-2 text-sm text-muted">
+            {lang === "zh"
+              ? `第 ${page} / ${totalPages} 頁`
+              : `Page ${page} of ${totalPages}`}
+          </span>
+          {page < totalPages && (
+            <Link
+              href={`/${lang}/competitions?page=${page + 1}`}
+              className="rounded-lg border border-pool-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:border-pool-mid hover:shadow-md dark:border-pool-border dark:bg-surface dark:hover:border-pool-light"
+            >
+              {lang === "zh" ? "下一頁" : "Next"}
+            </Link>
+          )}
+        </nav>
+      )}
     </div>
   );
 }

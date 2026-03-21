@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-03-21 — Competitions page pagination & query optimization
+
+### Competitions page pagination (`web/src/app/[lang]/competitions/page.tsx`)
+- Competitions page now loads 20 competitions per page instead of all at once
+- Server-side pagination via `?page=N` search param, defaults to page 1
+- Previous/Next navigation with "Page X of Y" indicator
+- Bilingual pagination labels (EN: Previous/Next, ZH: 上一頁/下一頁)
+- Still groups competitions by season (July–June) within each page
+
+### Competition query optimization (`web/src/lib/db.ts`)
+- Moved tier classification (open, championship, div1, etc.) from SQL `CASE` with 6 `LOWER()+LIKE` expressions to JS `classifyTier()` function — runs after fetch on the cached result, not per-row in SQL
+- `getCompetitions()` SQL now does a simple `GROUP BY competition_id, competition_name, course` with `MIN(date)` — fully covered by existing composite index `idx_results_new_competition`
+- `getCompetitionsPaginated(page, limit)` slices from the cached `getCompetitions()` result (cached 1 hour via `unstable_cache`) — no additional SQL query
+- `getCompetition(id)` restored to use cached list lookup instead of a separate SQL query
+
 ## 2026-03-21 — Project restructure & leaderboard UX improvements
 
 ### Leaderboard: age group & season filters as dropdowns (`web/src/app/[lang]/leaderboards/page.tsx`)

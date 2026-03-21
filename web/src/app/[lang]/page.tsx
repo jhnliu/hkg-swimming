@@ -19,10 +19,12 @@ export default async function HomePage({
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
 
-  const dict = await getDictionary(lang as Locale);
-  const competitions = await getCompetitions();
+  const [dict, competitions, stats] = await Promise.all([
+    getDictionary(lang as Locale),
+    getCompetitions(),
+    getDbStats(),
+  ]);
   const recent = competitions.slice(0, 6);
-  const stats = await getDbStats();
 
   return (
     <div className="flex flex-col gap-10">

@@ -142,10 +142,12 @@ export default async function SwimmerPage({
   const swimmer = await getSwimmer(decodedId);
   if (!swimmer) notFound();
 
-  const pbsLC = await getSwimmerPersonalBests(decodedId, "LC");
-  const pbsSC = await getSwimmerPersonalBests(decodedId, "SC");
-  const stats = await getSwimmerStats(decodedId);
-  const timeHistory = await getSwimmerTimeHistory(decodedId);
+  const [pbsLC, pbsSC, stats, timeHistory] = await Promise.all([
+    getSwimmerPersonalBests(decodedId, "LC"),
+    getSwimmerPersonalBests(decodedId, "SC"),
+    getSwimmerStats(decodedId),
+    getSwimmerTimeHistory(decodedId),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">

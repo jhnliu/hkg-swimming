@@ -45,11 +45,12 @@ export default async function CompetitionPage({
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
 
-  const dict = await getDictionary(lang as Locale);
-  const comp = await getCompetition(id);
+  const [dict, comp, events] = await Promise.all([
+    getDictionary(lang as Locale),
+    getCompetition(id),
+    getCompetitionEvents(id),
+  ]);
   if (!comp) notFound();
-
-  const events = await getCompetitionEvents(id);
 
   // Build event labels for the client component
   const eventLabels = events.map((event) => {

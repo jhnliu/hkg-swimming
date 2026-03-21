@@ -2,6 +2,10 @@
 
 ## 2026-03-21
 
+### Improvements (latest)
+- **Competitions page pagination** — Competitions now load 20 at a time with Previous/Next navigation, instead of loading all at once
+- **Faster competition queries** — Optimized competition listing queries for quicker page loads
+
 ### New Features
 - **My Team** — Build a personal watchlist of swimmers, no account needed. Add swimmers from their profile page, view all your tracked swimmers with their top 5 personal bests on the Team page. Save and share your team with a custom code (e.g. `/team?code=chan-family`)
 - **Leaderboard: Local vs Masters filter** — Toggle between All, Local, and Masters competitions on the leaderboard
