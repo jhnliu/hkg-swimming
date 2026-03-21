@@ -1,5 +1,124 @@
 # Changelog
 
+## 2026-03-21 — SEO, Appeals, Club Names & Data Reorganization
+
+### SEO & Open Graph (`web/src/lib/seo.ts`)
+- Added `alternatesForPath()` for `hreflang` links (en, zh, x-default) on every page
+- Added `ogMeta()` helper for Open Graph title/description/image per page
+- Root layout now sets `metadataBase`, bilingual description, structured keywords, and `robots` metadata
+- All major pages (home, competitions, swimmer, club, leaderboards, trends) now export `generateMetadata` with per-page OG tags and canonical URLs
+
+### Club name lookup (`download_clubs.py`, `web/src/lib/club-names.json`)
+- New scraper downloads HKASA club directory PDFs (2019–2026) and extracts English + Chinese club names
+- Produces `club-names.json` (90 clubs with EN/ZH names keyed by club code)
+- `getClubName(code, lang)` in `db.ts` resolves codes to full names throughout the UI
+- Club list, swimmer profile, search results, and breadcrumbs now show full club names instead of raw codes
+
+### Appeals system
+- New public appeals page (`/appeals`) — users can submit data corrections or report missing results
+- Supports two appeal types: "Correction" (wrong data) and "Missing" (missing results)
+- Admin review page (`/admin/appeals`) with approve/reject workflow and admin notes
+- Database-backed: `submitAppeal()`, `getAppeals()`, `reviewAppeal()` in `db.ts`
+- i18n: full EN/ZH translations for appeals UI
+
+### Masters competition scraper (`scrape_masters.py`)
+- Scrapes Masters (Advanced) swimming competition PDFs from hkgswimming.org.hk
+- Covers LCM Championships, LCM, and SCM categories across multiple seasons
+- PDFs saved to `data/pdf/masters/`, CSVs parsed to `data/csv/masters/`
+
+### Data directory reorganization
+- Reorganized flat file layout into structured directories:
+  - `data/pdf/local_competition/`, `data/pdf/masters/`, `data/pdf/regional/`
+  - `data/csv/local_competition/`, `data/csv/masters/`, `data/csv/clubs/`
+- Removed old `data/profiles/`, `data/clubs.json`, `data/competitions.json`, `data/events.json`, `data/personal_bests.json` (all served from Postgres now)
+- Updated paths in `build_data.py`, `build_db.py`, `parse_results.py`, `scrape_results.py`
+
+### Leaderboard age group records
+- Leaderboard now shows age group records (分齡記錄) alongside PB rankings
+
+### Competition place in swimmer PBs
+- Swimmer PB table now shows the place (名次) achieved at the competition where the PB was set
+
+### Competition detail page refactor
+- Switched from loading all results at once to per-event loading (`getCompetitionResultsByEvent`)
+- Added event-based navigation for large competitions
+- New `getSwimmerCompetitions()` and `getSwimmerResultsInCompetition()` queries
+
+### Parser fix (`parse_results.py`)
+- Club code regex now allows `#` prefix and digits (e.g. `#SPC`, `A01`) — previously only matched `*` prefix with letters
+
+### Documentation
+- Added `docs/DATABASE_SCHEMA.md` — Neon PostgreSQL schema reference
+- Added `docs/DATA_PIPELINE.md` — end-to-end data flow documentation
+
+## 2026-03-21 — Open Water Competition Scraper
+
+### New scraper (`scrape_openwater.py`)
+- Scrapes open water swimming result PDFs from `hkgswimming.org.hk/zh-hant/activities/134/`
+- 8 events available (2022/23 – 2025/26 seasons), 1 PDF each
+- PDFs contain structured results: swimmer IDs, names, teams, times, ranks (similar to HY-TEK but different event header format)
+- Saved to `data/pdf/openwater/`
+- Note: existing `parse_results.py` cannot parse these yet — event headers use open water format (`5km Open Water` vs `5000 LC Meter Freestyle`)
+
+### Updated `/sync-results` command
+- Added step 4 for open water competition sync
+
+## 2026-03-21 — Regional Competition Scraper & Parser
+
+### New scraper (`scrape_regional.py`)
+- Scrapes LCSD district age-group swimming competition results from `lcsd.gov.hk`
+- Covers all 18 Hong Kong districts, current season + last year
+- Downloads both result PDFs (top-3 prize winners) and best-record PDFs per district
+- PDFs saved to `data/pdf/regional/` with naming `{year}_{district}_{results|records}.pdf`
+- Note: LCSD only retains current + 1 year of history — must run seasonally to archive
+- Different format from HY-TEK (only top 3, not full results)
+
+### New parser (`parse_regional.py`)
+- Parses LCSD district competition PDFs into CSVs matching the existing data schema
+- Handles wildly different formats across 18 districts:
+  - Time formats: `2:27.36`, `28"67`, `27''73`, `0'33''77`, `00:25.22`, `1'34"96` — all normalized to `MM:SS.ss` / `SS.ss`
+  - Table layouts: 5–8 columns, varying header structures
+  - Gender: some districts put it in event names, others in page-level headers (e.g. Kwai Tsing)
+- Extracts event (distance, stroke, gender), age group, swimmer name, place (1–3), and normalized time
+- Record breakers (`*` markers) cleaned from names and tracked as `NR` in `time_standard`
+- Relay events skipped (team-based)
+- **7,043 results** parsed from 18 district PDFs (2025 season)
+
+### Updated `/sync-results` command
+- Added step 3 for regional competition sync
+
+## 2026-03-21 — Scraper Improvements & Sync Command
+
+### Scraper filtering (`scrape_results.py`)
+- Only downloads PDFs labeled **比賽賽果** (competition results), skipping team scores (團體成績), staff lists (工作人員名單), schedules (比賽賽程), etc.
+- Previously downloaded all PDFs blindly from each event page — 18 of the 30 unparseable PDFs were non-result documents that should never have been downloaded
+- Filter works by checking the `<div class="file-name">` label preceding each savefile link
+
+### New `/sync-results` command
+- Added `.claude/commands/sync-results.md` — checks hkgswimming.org.hk for new local + masters competition results, downloads new PDFs, and parses them into CSVs
+
+## 2026-03-21 — Leaderboard Filters & Swimmer PB Enhancements
+
+### Leaderboard Filters (based on user feedback)
+- Added **gender filter** (Male / Female) to leaderboards — maps to Men/Boys and Women/Girls in the data
+- Added **age group filter** to leaderboards — filters by the event age group (e.g. 8 & Under, 9-10, 11-12, Open, etc.)
+- Added **season filter** to leaderboards — filters by swimming season (July–June), with "All Time" as default
+- All filters are URL-driven (`searchParams`), composable, and preserved when switching events
+- Active filters shown as colored badges next to the event heading
+- "Clear all" button resets filters while keeping the selected event
+- New `getLeaderboard()` accepts `LeaderboardFilters` (gender, ageGroup, season)
+- New `getLeaderboardFilterOptions()` returns available age groups and seasons from the data
+
+### Swimmer PB Table Improvements
+- PB tables now show **competition place** (finish position at the meet where the PB was set)
+- Date column now **links to the competition page** with competition name as tooltip
+- Table headers are now properly localized (were hardcoded English before)
+
+### Files changed
+- `web/src/lib/db.ts` — new `LeaderboardFilters` interface, updated `getLeaderboard()`, added `getLeaderboardFilterOptions()`, updated `getSwimmerPersonalBests()` to return `place` and `competition_name`, extended `PersonalBest` interface
+- `web/src/app/[lang]/leaderboards/page.tsx` — gender/age group/season filter pills, filter-preserving event links, active filter badges
+- `web/src/app/[lang]/swimmer/[id]/page.tsx` — place column, competition link, localized headers in PB table
+
 ## 2026-03-21 — Live on Vercel
 
 Website is live at **hkg-swimming.vercel.app**.

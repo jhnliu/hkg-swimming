@@ -4,3 +4,4 @@ __pycache__/
 swimming.db
 results_csv/
 results_pdfs/
+.env*

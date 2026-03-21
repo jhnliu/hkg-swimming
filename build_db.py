@@ -3,11 +3,17 @@
 
 import csv
 import os
+import re
 import sqlite3
 from pathlib import Path
 
-CSV_DIR = Path("/Users/jhnl/hkg-swimming/results_csv")
-DB_PATH = Path("/Users/jhnl/hkg-swimming/swimming.db")
+BASE_DIR = Path(__file__).resolve().parent
+CSV_DIRS = [
+    BASE_DIR / "data/csv/local_competition",
+    BASE_DIR / "data/csv/masters",
+    BASE_DIR / "data/csv/regional",
+]
+DB_PATH = BASE_DIR / "swimming.db"
 
 def main():
     if DB_PATH.exists():
@@ -47,7 +53,10 @@ def main():
         CREATE INDEX idx_event ON results(distance, stroke, course, gender);
     """)
 
-    csv_files = sorted(CSV_DIR.glob("*.csv"))
+    csv_files = []
+    for d in CSV_DIRS:
+        if d.exists():
+            csv_files.extend(sorted(d.glob("*.csv")))
     total = 0
 
     for f in csv_files:
@@ -59,8 +68,7 @@ def main():
                 age = int(row["age"]) if row["age"] else None
                 # Normalize swimmer_id: extract numeric part only
                 raw_id = row["swimmer_id"].strip()
-                import re as _re
-                id_match = _re.match(r"(\d+)", raw_id)
+                id_match = re.match(r"(\d+)", raw_id)
                 swimmer_id = id_match.group(1) if id_match else raw_id
                 rows.append((
                     row["competition_id"], row["competition_name"], row["date"],

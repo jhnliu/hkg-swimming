@@ -2,7 +2,7 @@
 """
 Transform parsed CSV results into JSON files for the Next.js frontend.
 
-Reads:  results_csv/*.csv
+Reads:  data/csv/local_competition/*.csv
 Writes: data/swimmers.json, data/clubs.json, data/competitions.json,
         data/events.json, data/results/{comp_id}.json,
         data/profiles/{swimmer_id}.json, data/personal_bests.json,
@@ -17,7 +17,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-CSV_DIR = Path("results_csv")
+CSV_DIR = Path("data/csv/local_competition")
 OUT_DIR = Path("data")
 
 # --- Helpers ---
