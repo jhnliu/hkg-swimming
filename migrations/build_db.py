@@ -32,6 +32,7 @@ CSV_DIRS = [
     BASE_DIR / "data/csv/masters",
     BASE_DIR / "data/csv/regional",
 ]
+HKSSF_CSV_DIR = BASE_DIR / "data/csv/hkssf_secondary"
 DB_PATH = BASE_DIR / "swimming.db"
 
 def main():
@@ -41,6 +42,7 @@ def main():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
+    # ---------- results table (existing) ----------
     cur.executescript("""
         CREATE TABLE results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,8 +73,46 @@ def main():
         CREATE INDEX idx_competition_id ON results(competition_id);
         CREATE INDEX idx_date ON results(date);
         CREATE INDEX idx_event ON results(distance, stroke, course, gender);
+
+        CREATE TABLE hkssf_results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            competition_id TEXT,
+            competition_name TEXT,
+            date TEXT,
+            event_num INTEGER,
+            gender TEXT,
+            age_group TEXT,
+            distance TEXT,
+            course TEXT,
+            stroke TEXT,
+            place INTEGER,
+            swimmer_id TEXT,
+            swimmer_name TEXT,
+            age INTEGER,
+            club TEXT,
+            seed_time TEXT,
+            finals_time TEXT,
+            time_standard TEXT,
+            splits TEXT,
+            time_seconds REAL,
+            season TEXT,
+            division TEXT,
+            region TEXT,
+            heat TEXT,
+            points INTEGER,
+            record TEXT
+        );
+
+        CREATE INDEX idx_hkssf_swimmer_name ON hkssf_results(swimmer_name);
+        CREATE INDEX idx_hkssf_club ON hkssf_results(club);
+        CREATE INDEX idx_hkssf_competition_id ON hkssf_results(competition_id);
+        CREATE INDEX idx_hkssf_date ON hkssf_results(date);
+        CREATE INDEX idx_hkssf_event ON hkssf_results(distance, stroke, course, gender);
+        CREATE INDEX idx_hkssf_season ON hkssf_results(season);
+        CREATE INDEX idx_hkssf_division ON hkssf_results(division);
     """)
 
+    # ---------- Load main results ----------
     csv_files = []
     for d in CSV_DIRS:
         if d.exists():
@@ -109,6 +149,39 @@ def main():
 
     conn.commit()
     print(f"Loaded {total} results from {len(csv_files)} CSVs")
+
+    # ---------- Load HKSSF results ----------
+    hkssf_files = sorted(HKSSF_CSV_DIR.glob("*.csv")) if HKSSF_CSV_DIR.exists() else []
+    hkssf_total = 0
+
+    for f in hkssf_files:
+        with open(f, encoding="utf-8") as fh:
+            reader = csv.DictReader(fh)
+            rows = []
+            for row in reader:
+                place = int(row["place"]) if row["place"] else None
+                age = int(row["age"]) if row["age"] else None
+                finals_time = row["finals_time"]
+                time_seconds = parse_time_to_seconds(finals_time) if finals_time else None
+                points = int(row["points"]) if row["points"] else None
+                rows.append((
+                    row["competition_id"], row["competition_name"], row["date"],
+                    int(row["event_num"]), row["gender"], row["age_group"],
+                    row["distance"], row["course"], row["stroke"],
+                    place, row["swimmer_id"], row["swimmer_name"],
+                    age, row["club"], row["seed_time"], finals_time,
+                    row["time_standard"], row["splits"], time_seconds,
+                    row["season"], row["division"], row["region"],
+                    row["heat"], points, row["record"],
+                ))
+            cur.executemany(
+                "INSERT INTO hkssf_results VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                rows
+            )
+            hkssf_total += len(rows)
+
+    conn.commit()
+    print(f"Loaded {hkssf_total} HKSSF results from {len(hkssf_files)} CSVs")
     print(f"DB size: {DB_PATH.stat().st_size / 1024 / 1024:.1f} MB")
 
     # Quick stats
@@ -117,6 +190,16 @@ def main():
         ("Unique clubs", "SELECT COUNT(DISTINCT club) FROM results"),
         ("Unique competitions", "SELECT COUNT(DISTINCT competition_id) FROM results"),
         ("Date range", "SELECT MIN(date) || ' to ' || MAX(date) FROM results WHERE date != ''"),
+    ]:
+        cur.execute(sql)
+        print(f"{label}: {cur.fetchone()[0]}")
+
+    # HKSSF stats
+    for label, sql in [
+        ("HKSSF unique swimmers", "SELECT COUNT(DISTINCT swimmer_name) FROM hkssf_results"),
+        ("HKSSF unique schools", "SELECT COUNT(DISTINCT club) FROM hkssf_results"),
+        ("HKSSF seasons", "SELECT GROUP_CONCAT(DISTINCT season) FROM hkssf_results"),
+        ("HKSSF date range", "SELECT MIN(date) || ' to ' || MAX(date) FROM hkssf_results WHERE date != ''"),
     ]:
         cur.execute(sql)
         print(f"{label}: {cur.fetchone()[0]}")

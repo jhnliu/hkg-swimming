@@ -10,7 +10,8 @@
     "feedback": "Feedback",
     "appeals": "Appeals",
     "changelog": "Changelog",
-    "team": "My Team"
+    "team": "My Team",
+    "interSchool": "Inter-School"
   },
   "home": {
     "title": "HKG Swimming",
@@ -120,6 +121,11 @@
     "rejectedLabel": "rejected",
     "correctionLabel": "Correction",
     "missing_recordLabel": "Missing Record",
+    "gender_correctionLabel": "Gender Correction",
+    "typeGender": "Correct Gender",
+    "typeGenderDesc": "A swimmer's gender is shown incorrectly in the database.",
+    "genderCurrentLabel": "Currently Shown As",
+    "genderCorrectLabel": "Should Be",
     "noItems": "No appeals submitted yet.",
     "adminNote": "Admin Note",
     "reviewedAt": "Reviewed"
@@ -127,6 +133,31 @@
   "changelog": {
     "title": "Changelog",
     "subtitle": "What's new and what's changed on HKG Swimming."
+  },
+  "interSchool": {
+    "title": "Inter-School Swimming",
+    "subtitle": "HKSSF inter-school competition results and school rankings",
+    "competitions": "Competitions",
+    "leaderboards": "Leaderboards",
+    "rankings": "School Rankings",
+    "school": "School",
+    "division": "Division",
+    "season": "Season",
+    "ageGroup": "Grade",
+    "allDivisions": "All Divisions",
+    "allSeasons": "All Seasons",
+    "gold": "Gold",
+    "silver": "Silver",
+    "bronze": "Bronze",
+    "totalPoints": "Total Points",
+    "points": "Pts",
+    "record": "Record",
+    "schoolResults": "School Results",
+    "topPerformers": "Top Performers",
+    "medals": "Medals",
+    "gradeA": "Grade A",
+    "gradeB": "Grade B",
+    "gradeC": "Grade C"
   },
   "seo": {
     "siteDescription": "Search Hong Kong swimming competition results, track personal bests, and explore rankings across all age groups and events.",
@@ -142,7 +173,10 @@
     "competitionDescription": "{name} — {date}, {course}. Full results and rankings for this Hong Kong swimming competition.",
     "clubDescription": "{code} swimming club — roster, medal tally, season statistics, and stroke analysis.",
     "longCourse": "Long Course",
-    "shortCourse": "Short Course"
+    "shortCourse": "Short Course",
+    "interSchoolDescription": "HKSSF inter-school swimming competition results — browse by season, division, and event. School rankings and leaderboards.",
+    "interSchoolRankingsDescription": "School rankings for HKSSF inter-school swimming — medals, points, and performance by season and division.",
+    "interSchoolLeaderboardsDescription": "Inter-school swimming leaderboards — top times by event, grade, season, and division."
   },
   "team": {
     "title": "My Team",
@@ -150,7 +184,7 @@
     "addToTeam": "Add to team",
     "removeFromTeam": "Remove",
     "addedToTeam": "Added!",
-    "emptyTeam": "No swimmers in your team yet. Visit a swimmer's page and click \"Add to team\".",
+    "emptyTeam": "No swimmers in your team yet. Use the search above to add swimmers.",
     "saveTeam": "Save Team",
     "loadTeam": "Load Team",
     "teamCode": "Team Code",
@@ -169,7 +203,11 @@
     "codeTaken": "Anyone with this code can overwrite the team",
     "lc": "LC",
     "sc": "SC",
-    "noPbs": "No PBs yet"
+    "noPbs": "No PBs yet",
+    "howItWorks": "How it works",
+    "instruction1": "Search for swimmers above and click to add them to your team.",
+    "instruction2": "Choose a team code and save — share the link so others can see your team.",
+    "instruction3": "Load a saved team anytime by entering the code, or use a shared link."
   },
   "common": {
     "male": "Male",
@@ -179,6 +217,7 @@
     "team": "Team",
     "seedTime": "Seed",
     "finalsTime": "Finals",
+    "heatTime": "Heats",
     "noResults": "No results found",
     "loading": "Loading...",
     "lc": "LC",

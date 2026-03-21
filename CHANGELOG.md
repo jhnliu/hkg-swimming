@@ -1,5 +1,114 @@
 # Changelog
 
+## 2026-03-22 — Inter-School Competition Pages, Heat/Final Merge & Pill Filters
+
+### New inter-school frontend pages
+- **Competition listing** (`web/src/app/[lang]/inter-school/page.tsx`) — Browse all inter-school competitions with season/division filtering and pagination
+- **Competition detail** (`web/src/app/[lang]/inter-school/competition/[id]/page.tsx`) — Individual competition results with per-event expandable sections, swimmer search, and event filters
+- **School rankings** (`web/src/app/[lang]/inter-school/rankings/page.tsx`) — School rankings by medal count and total points with season/division filters
+- **Leaderboards** (`web/src/app/[lang]/inter-school/leaderboards/page.tsx`) — Top times across inter-school competitions by event, with gender/grade/season/division filters using pill UI
+- **School detail** (`web/src/app/[lang]/inter-school/school/[code]/page.tsx`) — Individual school page with summary stats, top performers, and results by competition
+- **API route** (`web/src/app/api/inter-school/competition/[id]/results/route.ts`) — Lazy-loads results per event or by swimmer search query
+
+### Heat/final merge for unlabeled data (`web/src/components/hkssf-competition-results.tsx`)
+- For 2022+ competitions (tabular PDF format), the parser sets `heat: ""` for all rows — no heat/final distinction in the data
+- New `mergeHeatFinal()` detects duplicate swimmers within the same event even when `hasHeats` is false
+- Infers heat vs final: entry with higher points = final, lower = heat (HKSSF scoring: finals award 9/7/6/5/4/3/2/1, heats award 1)
+- Single-entry swimmers (heat-only, didn't make finals) correctly placed in Heats column with "—" in Finals
+- Returns `MergeResult { rows, hasHeats }` so the table knows whether to show separate columns
+- For pre-2020 competitions with labeled `heat` field (e.g. "Heat 1", "Final"), uses existing merge logic
+
+### Pill-based event filters (`web/src/components/hkssf-competition-results.tsx`)
+- Replaced single `<select>` dropdown with pill-based filter rows for Gender, Grade, Distance, and Stroke
+- Matches the leaderboard page's filter pattern (`filter-active` gradient pills)
+- Filters are multi-dimensional and composable (e.g. Male + Grade A + 100m + Butterfly)
+- Shows filtered event count, Show All / Collapse All buttons, and "Clear filters" action
+- Filter rows auto-hide when only one option exists (e.g. only one grade in the competition)
+- `strokeLabels` prop passed from parent page with pre-formatted localized stroke names
+
+### Competition detail page (`web/src/app/[lang]/inter-school/competition/[id]/page.tsx`)
+- Passes `strokeLabels` map and expanded dict fields to `HkssfCompetitionResults` component
+- Uses `formatHkssfStroke` / `formatHkssfStrokeZh` for localized stroke labels in filter pills
+
+### Database queries (`web/src/lib/db.ts`)
+- Added 12 new HKSSF query functions: `getHkssfCompetitions`, `getHkssfCompetitionsPaginated`, `getHkssfCompetition`, `getHkssfCompetitionEvents`, `getHkssfCompetitionResultsByEventKey`, `getHkssfCompetitionResultsBySwimmer`, `getHkssfSchoolRankings`, `getHkssfLeaderboard`, `getHkssfLeaderboardEventKeys`, `getHkssfFilterOptions`, `getHkssfSchoolDetail`
+- `getHkssfCompetitionEvents` uses `BOOL_OR(heat LIKE 'Heat%') as has_heats` to detect events with labeled heats
+- Leaderboard uses `DISTINCT ON (swimmer_name, club)` for best times per swimmer
+- All queries use `unstable_cache` with appropriate cache keys and revalidation intervals
+- Added `formatHkssfStroke()`, `formatHkssfStrokeZh()`, `divisionLabel()` utility functions
+
+### Internationalization (`web/src/dictionaries/en.json`, `web/src/dictionaries/zh.json`)
+- Added `interSchool` section with 25 keys: title, subtitle, competitions, leaderboards, rankings, school, division, season, ageGroup, allDivisions, allSeasons, gold, silver, bronze, totalPoints, points, record, schoolResults, topPerformers, medals, gradeA/B/C
+- Added `nav.interSchool` key for navigation link
+- Added gender correction appeal type keys (`gender_correctionLabel`, `typeGender`, `typeGenderDesc`, `genderCurrentLabel`, `genderCorrectLabel`)
+
+### Navigation (`web/src/components/nav.tsx`)
+- Added "Inter-School" link to main navigation bar
+
+### Bug fixes
+- Added optional chaining (`strokeLabels?.[s]`) to prevent crash when prop is undefined during cache transition
+- Fixed `HkssfEventResultsTable` time column header: removed redundant ternary (`hasHeats ? finalsTime : finalsTime` → just `finalsTime`)
+
+## 2026-03-22 — HKSSF Secondary School Inter-School Swimming Results
+
+### New scraper (`scrape_hkssf_secondary.py`)
+- Downloads HKSSF inter-school swimming competition PDFs from hkssf-ext.org.hk
+- Covers 9 seasons (2015/16 – 2024/25), Divisions 1/2/3, regions: HK Island & Kowloon, Hong Kong Island, Kowloon 1, Kowloon 2
+- Pre-defined URLs for each season/division combination
+- PDFs saved to `data/pdf/hkssf_secondary/`
+- 45 PDFs total (2 empty: `1516 sw_results_d3k2.pdf`, `2425 sw_results_d1.pdf`)
+
+### New parser (`parsers/parse_hkssf_secondary.py`)
+- Handles 3 distinct PDF formats:
+  - **Format 1 (1516–1920)**: Old heat-by-heat text format with `HONG KONG SCHOOLS SPORTS FEDERATION` header, side-by-side summary pages (skipped), detailed results from page 12+
+  - **Format 2 (2122)**: Tabular, one event per page, finals only (8–9 swimmers per event)
+  - **Format 3 (2223–2425)**: Tabular with all heats, 20+ swimmers per event, multi-day results (Day One + Final Day)
+- Auto-detects format from page content (checks for `Rank Name School` header vs `HONG KONG SCHOOLS SPORTS FEDERATION`)
+- Skips standings pages (Running Total without events, Position School tables, grade summary tables)
+- Smart name/school boundary detection: scans right-to-left for uppercase school code token, avoiding false matches on name initials (e.g. "Samantha Worley B." no longer captured as school code "B.")
+- School code regex supports 2–12 char codes with letters, digits, hyphens (e.g. `DBS`, `FSS-KT`, `PLKNO.1C`, `SEKSS-WK`, `SMCESPS`)
+- Time normalization: handles `2: 4.28` → `2:04.28`, `1 : 58.75` → `1:58.75`, `:55.34` → `55.34`
+- Handles DQ, DNS, DN Start, DN Finish, relay teams, tied places
+- Stroke normalization with typo handling: `Back Sroke` → `backstroke`, `Indivdiual Medley` → `individual_medley`, `Free Style Relay (F)` → `freestyle_relay`
+- **65,843 results** parsed from 42 PDFs, 99.9% time parse accuracy (68 edge cases)
+
+### New database table: `hkssf_results`
+- Separate table from `results` — not merged because:
+  - No swimmer IDs (HKASA registration numbers not used in school competitions)
+  - School codes instead of club codes
+  - Grade (A/B/C) instead of age groups
+  - Additional metadata not present in main results
+- Schema shares 19 columns with `results` table plus 6 HKSSF-specific columns:
+  - `season` (e.g. `"2324"`), `division` (`"1"`, `"2"`, `"3"`), `region` (e.g. `"HK Island & Kowloon"`)
+  - `heat` (e.g. `"Heat 1"`, `"Final 3"`), `points` (scoring), `record` (event record time)
+- SQLite: 7 indexes including composite event index and season/division indexes
+- PostgreSQL: 8 indexes including partial leaderboard index on `time_seconds`
+
+### Database build (`migrations/build_db.py`)
+- Now creates both `results` and `hkssf_results` tables
+- Loads HKSSF CSVs from `data/csv/hkssf_secondary/`
+- Stats output includes HKSSF-specific metrics (unique swimmers by name, schools, seasons)
+
+### Migration (`migrations/20260322_143000_add_hkssf_results_to_pg.py`)
+- Standalone migration script — only creates `hkssf_results` table, does NOT touch existing `results`
+- Uses swap-table strategy: builds `hkssf_results_new`, creates indexes, atomic rename
+- Batch inserts in 5,000-row chunks with row count verification
+- Named with datetime prefix per new migration naming convention
+
+### Updated `migrate_to_pg.py`
+- Now handles both `results` and `hkssf_results` tables
+- Checks for `hkssf_results` existence in SQLite before attempting migration
+- Same swap-table strategy for both tables independently
+
+### Documentation updates
+- `docs/DATA_PIPELINE.md` — Added HKSSF scraper/parser to all pipeline stages, updated data source diagram, added all scrapers/parsers to running instructions, updated scale numbers
+- `docs/DATABASE_SCHEMA.md` — Added full `hkssf_results` table documentation with column reference, indexes, comparison table vs `results`, updated migration section
+
+### Data stats
+- **65,843 HKSSF results** | **13,275 unique swimmers** (by name) | **270 schools** | **9 seasons** (2015–2025)
+- **402,563 main results** | **16,701 swimmers** | **99 clubs** | **253 competitions** (2014–2026)
+- Combined DB size: ~139 MB (SQLite)
+
 ## 2026-03-21 — Competitions page pagination & query optimization
 
 ### Competitions page pagination (`web/src/app/[lang]/competitions/page.tsx`)

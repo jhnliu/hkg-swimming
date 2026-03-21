@@ -20,6 +20,7 @@ export function Nav({ lang, dict }: { lang: Locale; dict: Dict }) {
     { href: `/${lang}/competitions`, label: dict.nav.competitions },
     { href: `/${lang}/leaderboards`, label: dict.nav.leaderboards },
     { href: `/${lang}/clubs`, label: dict.nav.clubs },
+    { href: `/${lang}/inter-school`, label: dict.nav.interSchool },
     { href: `/${lang}/compare`, label: dict.nav.compare },
     { href: `/${lang}/trends`, label: dict.nav.trends },
     { href: `/${lang}/team`, label: dict.nav.team, badge: teamBadge },

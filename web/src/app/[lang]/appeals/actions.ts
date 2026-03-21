@@ -21,8 +21,20 @@ export async function submitAppealAction(formData: FormData) {
   const recorded_time =
     (formData.get("recorded_time") as string)?.trim() || "";
   const reason = (formData.get("reason") as string)?.trim() || "";
-  const requested_change =
+  const gender_current =
+    (formData.get("gender_current") as string)?.trim() || "";
+  const gender_correct =
+    (formData.get("gender_correct") as string)?.trim() || "";
+  let requested_change =
     (formData.get("requested_change") as string)?.trim() || "";
+
+  // For gender corrections, prepend the gender info to the requested change
+  if (appeal_type === "gender_correction" && gender_current && gender_correct) {
+    const genderInfo = `Gender: ${gender_current} → ${gender_correct}`;
+    requested_change = requested_change
+      ? `${genderInfo}\n${requested_change}`
+      : genderInfo;
+  }
 
   if (!swimmer_name || !reason || !requested_change) {
     redirect(`/${lang}/appeals?error=missing`);

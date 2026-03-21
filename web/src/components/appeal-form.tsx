@@ -27,7 +27,7 @@ interface ResultOption {
   time_standard: string;
 }
 
-type AppealType = "correction" | "missing_record";
+type AppealType = "correction" | "missing_record" | "gender_correction";
 
 const inputClass =
   "rounded-md border border-pool-border bg-white px-3 py-2 text-sm text-foreground placeholder:text-muted/50 focus:border-pool-mid focus:outline-none focus:ring-1 focus:ring-pool-mid dark:border-pool-border dark:bg-pool-deep/50 dark:placeholder:text-pool-light/30";
@@ -144,6 +144,10 @@ export function AppealForm({
   const [manualEvent, setManualEvent] = useState("");
   const [manualTime, setManualTime] = useState("");
 
+  /* ── Gender correction fields ── */
+  const [genderCurrentValue, setGenderCurrentValue] = useState("");
+  const [genderCorrectValue, setGenderCorrectValue] = useState("");
+
   /* ── Reset all when switching type ── */
   function switchType(type: AppealType) {
     setAppealType(type);
@@ -160,11 +164,16 @@ export function AppealForm({
     setManualCompetition("");
     setManualEvent("");
     setManualTime("");
+    // Reset gender fields
+    setGenderCurrentValue("");
+    setGenderCorrectValue("");
   }
+
+  const isGenderCorrection = appealType === "gender_correction";
 
   /* ── Search swimmers with debounce ── */
   useEffect(() => {
-    if (!isCorrection || selectedSwimmer) return;
+    if ((!isCorrection && !isGenderCorrection) || selectedSwimmer) return;
     if (swimmerQuery.length < 2) {
       setSwimmerResults([]);
       setShowSwimmerDropdown(false);
@@ -193,7 +202,7 @@ export function AppealForm({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [swimmerQuery, selectedSwimmer, isCorrection]);
+  }, [swimmerQuery, selectedSwimmer, isCorrection, isGenderCorrection]);
 
   /* ── Load competitions when swimmer selected ── */
   useEffect(() => {
@@ -293,10 +302,10 @@ export function AppealForm({
     : 1; // missing record mode doesn't have steps
 
   /* ── Compute hidden field values ── */
-  const swimmerNameValue = isCorrection
+  const swimmerNameValue = isCorrection || isGenderCorrection
     ? selectedSwimmer?.name || ""
     : manualSwimmerName;
-  const swimmerIdValue = isCorrection ? selectedSwimmer?.id || "" : "";
+  const swimmerIdValue = isCorrection || isGenderCorrection ? selectedSwimmer?.id || "" : "";
   const competitionValue = isCorrection
     ? selectedCompetition
       ? `${selectedCompetition.name} (${selectedCompetition.date})`
@@ -306,12 +315,18 @@ export function AppealForm({
     ? selectedResult
       ? `${selectedResult.distance}m ${selectedResult.stroke} ${selectedResult.course}`
       : ""
-    : manualEvent;
+    : isGenderCorrection
+      ? genderCurrentValue
+        ? `${d.genderCurrentLabel}: ${genderCurrentValue}`
+        : ""
+      : manualEvent;
   const timeValue = isCorrection
     ? selectedResult?.finals_time || ""
     : manualTime;
 
-  const canSubmit = isCorrection ? !!selectedSwimmer : !!manualSwimmerName;
+  const canSubmit = isCorrection || isGenderCorrection
+    ? !!selectedSwimmer
+    : !!manualSwimmerName;
 
   return (
     <form
@@ -325,10 +340,16 @@ export function AppealForm({
       <input type="hidden" name="competition_name" value={competitionValue} />
       <input type="hidden" name="event_description" value={eventValue} />
       <input type="hidden" name="recorded_time" value={timeValue} />
+      {isGenderCorrection && (
+        <>
+          <input type="hidden" name="gender_current" value={genderCurrentValue} />
+          <input type="hidden" name="gender_correct" value={genderCorrectValue} />
+        </>
+      )}
 
       {/* ── Appeal type toggle ── */}
       <div className="sm:col-span-2">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <button
             type="button"
             onClick={() => switchType("correction")}
@@ -360,7 +381,7 @@ export function AppealForm({
             type="button"
             onClick={() => switchType("missing_record")}
             className={`rounded-lg border-2 p-3 text-left transition-colors ${
-              !isCorrection
+              appealType === "missing_record"
                 ? "border-pool-mid bg-sky-50 dark:border-pool-light dark:bg-pool-light/10"
                 : "border-pool-border bg-white hover:border-pool-mid/50 dark:border-pool-border dark:bg-pool-deep/30 dark:hover:border-pool-light/30"
             }`}
@@ -368,12 +389,12 @@ export function AppealForm({
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex h-5 w-5 items-center justify-center rounded-full border-2 text-xs ${
-                  !isCorrection
+                  appealType === "missing_record"
                     ? "border-pool-mid bg-pool-mid text-white dark:border-pool-light dark:bg-pool-light dark:text-pool-deep"
                     : "border-gray-300 dark:border-pool-border"
                 }`}
               >
-                {!isCorrection && "✓"}
+                {appealType === "missing_record" && "✓"}
               </span>
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {d.typeMissing}
@@ -381,6 +402,33 @@ export function AppealForm({
             </div>
             <p className="mt-1 pl-7 text-xs text-slate-500 dark:text-pool-light/50">
               {d.typeMissingDesc}
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => switchType("gender_correction")}
+            className={`rounded-lg border-2 p-3 text-left transition-colors ${
+              isGenderCorrection
+                ? "border-pool-mid bg-sky-50 dark:border-pool-light dark:bg-pool-light/10"
+                : "border-pool-border bg-white hover:border-pool-mid/50 dark:border-pool-border dark:bg-pool-deep/30 dark:hover:border-pool-light/30"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex h-5 w-5 items-center justify-center rounded-full border-2 text-xs ${
+                  isGenderCorrection
+                    ? "border-pool-mid bg-pool-mid text-white dark:border-pool-light dark:bg-pool-light dark:text-pool-deep"
+                    : "border-gray-300 dark:border-pool-border"
+                }`}
+              >
+                {isGenderCorrection && "✓"}
+              </span>
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                {d.typeGender}
+              </span>
+            </div>
+            <p className="mt-1 pl-7 text-xs text-slate-500 dark:text-pool-light/50">
+              {d.typeGenderDesc}
             </p>
           </button>
         </div>
@@ -424,7 +472,7 @@ export function AppealForm({
       {/* ════════════════════════════════════════════════
           CORRECTION MODE — cascading autocomplete
          ════════════════════════════════════════════════ */}
-      {isCorrection && (
+      {(isCorrection || isGenderCorrection) && (
         <>
           {/* Step 1: Swimmer search */}
           <div
@@ -519,7 +567,8 @@ export function AppealForm({
             )}
           </div>
 
-          {/* Step 2: Competition select */}
+          {/* Step 2: Competition select (correction mode only) */}
+          {isCorrection && (
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <label
               htmlFor="competition_select"
@@ -560,8 +609,10 @@ export function AppealForm({
               ))}
             </select>
           </div>
+          )}
 
-          {/* Step 3: Result select */}
+          {/* Step 3: Result select (correction mode only) */}
+          {isCorrection && (
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <label
               htmlFor="result_select"
@@ -603,9 +654,10 @@ export function AppealForm({
               ))}
             </select>
           </div>
+          )}
 
-          {/* Selected result summary */}
-          {selectedResult && (
+          {/* Selected result summary (correction mode only) */}
+          {isCorrection && selectedResult && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-900/20 sm:col-span-2">
               <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
                 {lang === "en" ? "Appealing this result" : "申訴此成績"}
@@ -654,13 +706,48 @@ export function AppealForm({
               </div>
             </div>
           )}
+          {/* Gender selection (gender_correction mode only) */}
+          {isGenderCorrection && selectedSwimmer && (
+            <div className="flex flex-col gap-3 sm:col-span-2">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-foreground">
+                    {d.genderCurrentLabel}
+                  </label>
+                  <select
+                    value={genderCurrentValue}
+                    onChange={(e) => setGenderCurrentValue(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">{lang === "en" ? "Select current gender shown" : "選擇目前顯示的性別"}</option>
+                    <option value="Male">{lang === "en" ? "Male (Men/Boys)" : "男（Men/Boys）"}</option>
+                    <option value="Female">{lang === "en" ? "Female (Women/Girls)" : "女（Women/Girls）"}</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-foreground">
+                    {d.genderCorrectLabel}
+                  </label>
+                  <select
+                    value={genderCorrectValue}
+                    onChange={(e) => setGenderCorrectValue(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">{lang === "en" ? "Select correct gender" : "選擇正確的性別"}</option>
+                    <option value="Male">{lang === "en" ? "Male (Men/Boys)" : "男（Men/Boys）"}</option>
+                    <option value="Female">{lang === "en" ? "Female (Women/Girls)" : "女（Women/Girls）"}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
       {/* ════════════════════════════════════════════════
           MISSING RECORD MODE — manual input
          ════════════════════════════════════════════════ */}
-      {!isCorrection && (
+      {appealType === "missing_record" && (
         <>
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <label

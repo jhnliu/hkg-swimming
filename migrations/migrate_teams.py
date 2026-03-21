@@ -4,6 +4,7 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "web", ".env.local"))
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "web", ".env"))
 
 

@@ -1,5 +1,16 @@
 # What's New
 
+## 2026-03-22
+
+### New Features (latest)
+- **Inter-School Swimming Results** — Added HKSSF secondary school inter-school competition results covering 9 seasons (2015/16 – 2024/25), Divisions 1/2/3 across HK Island, Kowloon, and combined regions. Over 65,000 results from 270+ schools now searchable
+- **Inter-School Competition Pages** — Browse competitions, view event results with heat and final times, school rankings with medals and points, top-time leaderboards, and individual school profiles
+- **Inter-School Leaderboards** — Top times across all inter-school competitions, filterable by event, gender, grade, season, and division
+
+### Improvements (latest)
+- **Heat & Final times** — Events with heats and finals now display both times side by side, with finalists showing both rounds and heat-only swimmers clearly marked
+- **Event filters** — Competition results can now be filtered by Gender, Grade, Distance, and Stroke using clickable pill buttons instead of a dropdown list. Filters can be combined freely
+
 ## 2026-03-21
 
 ### Improvements (latest)
@@ -29,6 +40,7 @@
 - Fixed display issues with certain swim times containing extra characters
 
 ### Data
-- **342,327 results** across **14,897 swimmers**, **90 clubs**, and **218+ competitions** (2014–2026)
-- Includes local competitions, masters, regional (18 districts), and open water events
+- **402,563 results** across **16,701 swimmers**, **99 clubs**, and **253 competitions** (2014–2026)
+- **65,843 inter-school results** across **13,275 students** and **270 schools** (2015–2025)
+- Includes local competitions, masters, regional (18 districts), open water, and HKSSF inter-school events
 - Swim times, splits, qualifying standards, and placements all searchable

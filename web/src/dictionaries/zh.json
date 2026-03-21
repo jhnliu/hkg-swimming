@@ -10,7 +10,8 @@
     "feedback": "意見反饋",
     "appeals": "申訴",
     "changelog": "更新日誌",
-    "team": "我的隊伍"
+    "team": "我的隊伍",
+    "interSchool": "學界游泳"
   },
   "home": {
     "title": "香港游泳",
@@ -120,6 +121,11 @@
     "rejectedLabel": "已拒絕",
     "correctionLabel": "更正",
     "missing_recordLabel": "遺漏記錄",
+    "gender_correctionLabel": "性別更正",
+    "typeGender": "更正性別",
+    "typeGenderDesc": "泳手的性別在資料庫中顯示錯誤。",
+    "genderCurrentLabel": "目前顯示為",
+    "genderCorrectLabel": "應該是",
     "noItems": "暫無申訴記錄。",
     "adminNote": "管理員備註",
     "reviewedAt": "審核時間"
@@ -127,6 +133,31 @@
   "changelog": {
     "title": "更新日誌",
     "subtitle": "HKG Swimming 的最新更新與變更記錄。"
+  },
+  "interSchool": {
+    "title": "學界游泳",
+    "subtitle": "學界體育聯會校際游泳比賽成績及學校排名",
+    "competitions": "比賽",
+    "leaderboards": "排行榜",
+    "rankings": "學校排名",
+    "school": "學校",
+    "division": "組別",
+    "season": "賽季",
+    "ageGroup": "級別",
+    "allDivisions": "所有組別",
+    "allSeasons": "所有賽季",
+    "gold": "金牌",
+    "silver": "銀牌",
+    "bronze": "銅牌",
+    "totalPoints": "總積分",
+    "points": "分",
+    "record": "紀錄",
+    "schoolResults": "學校成績",
+    "topPerformers": "最佳表現",
+    "medals": "獎牌",
+    "gradeA": "甲組",
+    "gradeB": "乙組",
+    "gradeC": "丙組"
   },
   "seo": {
     "siteDescription": "搜尋香港游泳比賽成績、追蹤個人最佳時間、瀏覽各年齡組別排名。",
@@ -142,7 +173,10 @@
     "competitionDescription": "{name}——{date}，{course}。此香港游泳比賽的完整成績及排名。",
     "clubDescription": "{code} 泳會——泳手名冊、獎牌統計、賽季數據及泳式分析。",
     "longCourse": "長池",
-    "shortCourse": "短池"
+    "shortCourse": "短池",
+    "interSchoolDescription": "學界體育聯會校際游泳比賽成績——按賽季、組別及項目瀏覽。學校排名及排行榜。",
+    "interSchoolRankingsDescription": "學界校際游泳學校排名——按賽季及組別查看獎牌、積分及表現。",
+    "interSchoolLeaderboardsDescription": "學界校際游泳排行榜——按項目、級別、賽季及組別查看最快時間。"
   },
   "team": {
     "title": "我的隊伍",
@@ -150,7 +184,7 @@
     "addToTeam": "加入隊伍",
     "removeFromTeam": "移除",
     "addedToTeam": "已加入！",
-    "emptyTeam": "隊伍中還沒有泳手。前往泳手頁面點擊「加入隊伍」。",
+    "emptyTeam": "隊伍中還沒有泳手。使用上方搜尋列加入泳手。",
     "saveTeam": "儲存隊伍",
     "loadTeam": "載入隊伍",
     "teamCode": "隊伍代碼",
@@ -169,7 +203,11 @@
     "codeTaken": "任何知道此代碼的人都可以覆蓋隊伍",
     "lc": "長池",
     "sc": "短池",
-    "noPbs": "暫無最佳成績"
+    "noPbs": "暫無最佳成績",
+    "howItWorks": "使用說明",
+    "instruction1": "在上方搜尋泳手，點擊即可加入你的隊伍。",
+    "instruction2": "選擇一個隊伍代碼並儲存——分享連結讓其他人查看你的隊伍。",
+    "instruction3": "隨時輸入代碼載入已儲存的隊伍，或使用分享連結直接開啟。"
   },
   "common": {
     "male": "男",
@@ -179,6 +217,7 @@
     "team": "泳會",
     "seedTime": "報名時間",
     "finalsTime": "決賽時間",
+    "heatTime": "預賽時間",
     "noResults": "沒有結果",
     "loading": "載入中...",
     "lc": "長池",

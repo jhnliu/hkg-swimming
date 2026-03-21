@@ -890,18 +890,39 @@ export interface DbStats {
 
 export const getDbStats = unstable_cache(
   async (): Promise<DbStats> => {
-    const rows = await sql`
-      SELECT
-        COUNT(*) as total_results,
-        COUNT(DISTINCT swimmer_id) as total_swimmers,
-        COUNT(DISTINCT club) as total_clubs,
-        COUNT(DISTINCT competition_id) as total_competitions,
-        MIN(date) as date_from,
-        MAX(date) as date_to
-      FROM results
-      WHERE swimmer_id != ''
-    `;
-    return rows[0] as DbStats;
+    const [mainRows, hkssfRows] = await Promise.all([
+      sql`
+        SELECT
+          COUNT(*) as total_results,
+          COUNT(DISTINCT swimmer_id) as total_swimmers,
+          COUNT(DISTINCT club) as total_clubs,
+          COUNT(DISTINCT competition_id) as total_competitions,
+          MIN(date) as date_from,
+          MAX(date) as date_to
+        FROM results
+        WHERE swimmer_id != ''
+      `,
+      sql`
+        SELECT
+          COUNT(*) as total_results,
+          COUNT(DISTINCT competition_id) as total_competitions,
+          MIN(date) as date_from,
+          MAX(date) as date_to
+        FROM hkssf_results
+      `,
+    ]);
+    const main = mainRows[0] as Record<string, string>;
+    const hkssf = hkssfRows[0] as Record<string, string>;
+    const dateFrom = main.date_from < hkssf.date_from ? main.date_from : hkssf.date_from;
+    const dateTo = main.date_to > hkssf.date_to ? main.date_to : hkssf.date_to;
+    return {
+      total_results: Number(main.total_results) + Number(hkssf.total_results),
+      total_swimmers: Number(main.total_swimmers),
+      total_clubs: Number(main.total_clubs),
+      total_competitions: Number(main.total_competitions) + Number(hkssf.total_competitions),
+      date_from: dateFrom,
+      date_to: dateTo,
+    } as DbStats;
   },
   ["db-stats"],
   { revalidate: 86400 }
@@ -1121,6 +1142,383 @@ export async function reviewAppeal(
       requested_change, status, admin_note, created_at::TEXT, reviewed_at::TEXT
   `;
   return rows[0] as AppealItem;
+}
+
+// --- HKSSF Inter-School ---
+
+export interface HkssfCompetition {
+  id: string;
+  name: string;
+  date: string;
+  season: string;
+  division: string;
+  region: string;
+}
+
+export interface HkssfResult {
+  competition_id: string;
+  competition_name: string;
+  date: string;
+  event_num: number;
+  gender: string;
+  age_group: string;
+  distance: string;
+  course: string;
+  stroke: string;
+  place: number | null;
+  swimmer_name: string;
+  club: string;
+  finals_time: string;
+  time_standard: string;
+  time_seconds: number | null;
+  season: string;
+  division: string;
+  region: string;
+  heat: string;
+  points: number | null;
+  record: string;
+}
+
+export interface HkssfSchoolRanking {
+  club: string;
+  gold: number;
+  silver: number;
+  bronze: number;
+  total_points: number;
+  result_count: number;
+}
+
+export const getHkssfCompetitions = unstable_cache(
+  async (): Promise<HkssfCompetition[]> => {
+    const rows = await sql`
+      SELECT competition_id as id, competition_name as name,
+        MIN(date) as date, season, division,
+        MIN(region) as region
+      FROM hkssf_results
+      WHERE competition_id != ''
+      GROUP BY competition_id, competition_name, season, division
+      ORDER BY MIN(date) DESC
+    `;
+    return rows as HkssfCompetition[];
+  },
+  ["hkssf-competitions"],
+  { revalidate: 86400 }
+);
+
+export async function getHkssfCompetitionsPaginated(
+  page: number = 1,
+  limit: number = 20,
+  filters: { season?: string; division?: string } = {}
+): Promise<{ competitions: HkssfCompetition[]; total: number }> {
+  let all = await getHkssfCompetitions();
+  if (filters.season) all = all.filter((c) => c.season === filters.season);
+  if (filters.division) all = all.filter((c) => c.division === filters.division);
+  const offset = (page - 1) * limit;
+  return {
+    competitions: all.slice(offset, offset + limit),
+    total: all.length,
+  };
+}
+
+export async function getHkssfCompetition(id: string): Promise<HkssfCompetition | undefined> {
+  const comps = await getHkssfCompetitions();
+  return comps.find((c) => c.id === id);
+}
+
+export interface HkssfEvent {
+  gender: string;
+  age_group: string;
+  distance: string;
+  stroke: string;
+  course: string;
+  has_heats: boolean;
+}
+
+export async function getHkssfCompetitionEvents(competitionId: string): Promise<HkssfEvent[]> {
+  const rows = await sql`
+    SELECT gender, age_group, distance, stroke, course,
+      BOOL_OR(heat LIKE 'Heat%') as has_heats
+    FROM hkssf_results
+    WHERE competition_id = ${competitionId}
+    GROUP BY gender, age_group, distance, stroke, course
+    ORDER BY MIN(event_num), gender, age_group
+  `;
+  return rows as HkssfEvent[];
+}
+
+export async function getHkssfCompetitionResultsByEventKey(
+  competitionId: string,
+  gender: string,
+  ageGroup: string,
+  distance: string,
+  stroke: string
+): Promise<HkssfResult[]> {
+  const rows = await sql`
+    SELECT competition_id, competition_name, date, event_num, gender, age_group,
+      distance, course, stroke, place, swimmer_name, club, finals_time,
+      time_standard, time_seconds, season, division, region, heat, points, record
+    FROM hkssf_results
+    WHERE competition_id = ${competitionId}
+      AND gender = ${gender}
+      AND age_group = ${ageGroup}
+      AND distance = ${distance}
+      AND stroke = ${stroke}
+    ORDER BY
+      CASE WHEN time_seconds IS NULL THEN 1 ELSE 0 END,
+      time_seconds
+  `;
+  return rows as HkssfResult[];
+}
+
+export async function getHkssfCompetitionResultsBySwimmer(
+  competitionId: string,
+  swimmerQuery: string
+): Promise<HkssfResult[]> {
+  const pattern = `%${swimmerQuery}%`;
+  const rows = await sql`
+    SELECT competition_id, competition_name, date, event_num, gender, age_group,
+      distance, course, stroke, place, swimmer_name, club, finals_time,
+      time_standard, time_seconds, season, division, region, heat, points, record
+    FROM hkssf_results
+    WHERE competition_id = ${competitionId}
+      AND REPLACE(swimmer_name, ',', '') ILIKE ${pattern}
+    ORDER BY event_num,
+      CASE WHEN place IS NULL THEN 1 ELSE 0 END,
+      place
+  `;
+  return rows as HkssfResult[];
+}
+
+export async function getHkssfSchoolRankings(
+  season?: string,
+  division?: string
+): Promise<HkssfSchoolRanking[]> {
+  const conditions: string[] = ["time_seconds IS NOT NULL"];
+  if (season) conditions.push(`season = '${season.replace(/'/g, "''")}'`);
+  if (division) conditions.push(`division = '${division.replace(/'/g, "''")}'`);
+  const where = conditions.join(" AND ");
+
+  const cacheKey = ["hkssf-rankings", season || "", division || ""];
+  const cached = unstable_cache(
+    async () => {
+      const rows = await sql`${sql.unsafe(`
+        SELECT club,
+          COUNT(*) FILTER (WHERE place = 1) as gold,
+          COUNT(*) FILTER (WHERE place = 2) as silver,
+          COUNT(*) FILTER (WHERE place = 3) as bronze,
+          COALESCE(SUM(points), 0) as total_points,
+          COUNT(*) as result_count
+        FROM hkssf_results
+        WHERE ${where}
+        GROUP BY club
+        ORDER BY total_points DESC, gold DESC, silver DESC, bronze DESC
+      `)}`;
+      return rows as unknown as HkssfSchoolRanking[];
+    },
+    cacheKey,
+    { revalidate: 3600 }
+  );
+  return cached();
+}
+
+export interface HkssfLeaderboardFilters {
+  gender?: string;
+  ageGroup?: string;
+  season?: string;
+  division?: string;
+}
+
+async function _getHkssfLeaderboard(
+  eventKey: string,
+  limit: number = 25,
+  filters: HkssfLeaderboardFilters = {}
+): Promise<PersonalBest[]> {
+  const [stroke, distance] = eventKey.split("_");
+
+  const conditions: string[] = [
+    `stroke = '${stroke.replace(/'/g, "''")}'`,
+    `distance = '${distance.replace(/'/g, "''")}'`,
+    "time_seconds IS NOT NULL",
+  ];
+
+  if (filters.gender === "M") conditions.push("gender = 'M'");
+  else if (filters.gender === "F") conditions.push("gender = 'F'");
+
+  if (filters.ageGroup) {
+    conditions.push(`age_group = '${filters.ageGroup.replace(/'/g, "''")}'`);
+  }
+  if (filters.season) {
+    conditions.push(`season = '${filters.season.replace(/'/g, "''")}'`);
+  }
+  if (filters.division) {
+    conditions.push(`division = '${filters.division.replace(/'/g, "''")}'`);
+  }
+
+  const where = conditions.join(" AND ");
+
+  const rows = await sql`${sql.unsafe(`
+    WITH best_times AS (
+      SELECT DISTINCT ON (swimmer_name, club)
+        '' as swimmer_id, swimmer_name, club, distance, stroke, course,
+        finals_time as time,
+        time_seconds,
+        date, age, competition_id
+      FROM hkssf_results
+      WHERE ${where}
+      ORDER BY swimmer_name, club, time_seconds ASC
+    )
+    SELECT * FROM best_times
+    ORDER BY time_seconds
+    LIMIT ${limit}
+  `)}`;
+  return rows as unknown as PersonalBest[];
+}
+
+export async function getHkssfLeaderboard(
+  eventKey: string,
+  limit: number = 25,
+  filters: HkssfLeaderboardFilters = {}
+): Promise<PersonalBest[]> {
+  const cacheKey = [
+    "hkssf-leaderboard",
+    eventKey,
+    String(limit),
+    filters.gender || "",
+    filters.ageGroup || "",
+    filters.season || "",
+    filters.division || "",
+  ];
+  const cached = unstable_cache(
+    () => _getHkssfLeaderboard(eventKey, limit, filters),
+    cacheKey,
+    { revalidate: 300 }
+  );
+  return cached();
+}
+
+export const getHkssfLeaderboardEventKeys = unstable_cache(
+  async (): Promise<string[]> => {
+    const rows = await sql`
+      SELECT DISTINCT stroke || '_' || distance || '_LC' as event_key
+      FROM hkssf_results
+      WHERE time_seconds IS NOT NULL
+      ORDER BY event_key
+    `;
+    return (rows as { event_key: string }[])
+      .map((r) => r.event_key)
+      .sort((a, b) => {
+        const [, da] = a.split("_");
+        const [, db] = b.split("_");
+        return parseInt(da) - parseInt(db) || a.localeCompare(b);
+      });
+  },
+  ["hkssf-leaderboard-event-keys"],
+  { revalidate: 3600 }
+);
+
+export const getHkssfFilterOptions = unstable_cache(
+  async (): Promise<{
+    seasons: string[];
+    divisions: string[];
+    ageGroups: string[];
+  }> => {
+    const [seasons, divisions, ageGroups] = await Promise.all([
+      sql`SELECT DISTINCT season FROM hkssf_results ORDER BY season DESC`,
+      sql`SELECT DISTINCT division FROM hkssf_results ORDER BY division`,
+      sql`SELECT DISTINCT age_group FROM hkssf_results WHERE age_group != '' ORDER BY age_group`,
+    ]);
+    return {
+      seasons: seasons.map((r) => r.season as string),
+      divisions: divisions.map((r) => r.division as string),
+      ageGroups: ageGroups.map((r) => r.age_group as string),
+    };
+  },
+  ["hkssf-filter-options"],
+  { revalidate: 86400 }
+);
+
+export async function getHkssfSchoolDetail(
+  schoolCode: string,
+  season?: string
+): Promise<{
+  results: HkssfResult[];
+  totals: { total_results: number; gold: number; silver: number; bronze: number; total_points: number; seasons: number };
+}> {
+  const seasonFilter = season ? `AND season = '${season.replace(/'/g, "''")}'` : "";
+
+  const [results, totalsRows] = await Promise.all([
+    sql`${sql.unsafe(`
+      SELECT competition_id, competition_name, date, event_num, gender, age_group,
+        distance, course, stroke, place, swimmer_name, club, finals_time,
+        time_standard, time_seconds, season, division, region, heat, points, record
+      FROM hkssf_results
+      WHERE club = '${schoolCode.replace(/'/g, "''")}' ${seasonFilter}
+      ORDER BY date DESC, event_num
+    `)}`,
+    sql`${sql.unsafe(`
+      SELECT
+        COUNT(*) as total_results,
+        SUM(CASE WHEN place = 1 THEN 1 ELSE 0 END) as gold,
+        SUM(CASE WHEN place = 2 THEN 1 ELSE 0 END) as silver,
+        SUM(CASE WHEN place = 3 THEN 1 ELSE 0 END) as bronze,
+        COALESCE(SUM(points), 0) as total_points,
+        COUNT(DISTINCT season) as seasons
+      FROM hkssf_results
+      WHERE club = '${schoolCode.replace(/'/g, "''")}' ${seasonFilter}
+    `)}`,
+  ]);
+
+  return {
+    results: results as HkssfResult[],
+    totals: totalsRows[0] as {
+      total_results: number;
+      gold: number;
+      silver: number;
+      bronze: number;
+      total_points: number;
+      seasons: number;
+    },
+  };
+}
+
+export function divisionLabel(division: string, region: string, lang: "en" | "zh"): string {
+  if (division === "1") return lang === "en" ? "Division 1" : "第一組";
+  if (division === "2") return lang === "en" ? "Division 2" : "第二組";
+  if (division === "3") {
+    const regionLabel = lang === "en" ? region : (
+      region === "Hong Kong Island" ? "港島" :
+      region === "Kowloon 1" ? "九龍一" :
+      region === "Kowloon 2" ? "九龍二" : region
+    );
+    return lang === "en" ? `Division 3 (${regionLabel})` : `第三組（${regionLabel}）`;
+  }
+  return division;
+}
+
+export function formatHkssfStroke(stroke: string): string {
+  const map: Record<string, string> = {
+    freestyle: "Freestyle",
+    backstroke: "Backstroke",
+    breaststroke: "Breaststroke",
+    butterfly: "Butterfly",
+    individual_medley: "Individual Medley",
+    freestyle_relay: "Freestyle Relay",
+    medley_relay: "Medley Relay",
+  };
+  return map[stroke] || stroke;
+}
+
+export function formatHkssfStrokeZh(stroke: string): string {
+  const map: Record<string, string> = {
+    freestyle: "自由泳",
+    backstroke: "背泳",
+    breaststroke: "蛙泳",
+    butterfly: "蝶泳",
+    individual_medley: "個人四式",
+    freestyle_relay: "自由泳接力",
+    medley_relay: "四式接力",
+  };
+  return map[stroke] || stroke;
 }
 
 // --- Formatting helpers ---

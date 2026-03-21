@@ -28,6 +28,7 @@ export interface Dict {
     appeals: string;
     changelog: string;
     team: string;
+    interSchool: string;
   };
   home: {
     title: string;
@@ -137,6 +138,11 @@ export interface Dict {
     rejectedLabel: string;
     correctionLabel: string;
     missing_recordLabel: string;
+    gender_correctionLabel: string;
+    typeGender: string;
+    typeGenderDesc: string;
+    genderCurrentLabel: string;
+    genderCorrectLabel: string;
     noItems: string;
     adminNote: string;
     reviewedAt: string;
@@ -144,6 +150,31 @@ export interface Dict {
   changelog: {
     title: string;
     subtitle: string;
+  };
+  interSchool: {
+    title: string;
+    subtitle: string;
+    competitions: string;
+    leaderboards: string;
+    rankings: string;
+    school: string;
+    division: string;
+    season: string;
+    ageGroup: string;
+    allDivisions: string;
+    allSeasons: string;
+    gold: string;
+    silver: string;
+    bronze: string;
+    totalPoints: string;
+    points: string;
+    record: string;
+    schoolResults: string;
+    topPerformers: string;
+    medals: string;
+    gradeA: string;
+    gradeB: string;
+    gradeC: string;
   };
   seo: {
     siteDescription: string;
@@ -160,6 +191,9 @@ export interface Dict {
     clubDescription: string;
     longCourse: string;
     shortCourse: string;
+    interSchoolDescription: string;
+    interSchoolRankingsDescription: string;
+    interSchoolLeaderboardsDescription: string;
   };
   team: {
     title: string;
@@ -187,6 +221,10 @@ export interface Dict {
     lc: string;
     sc: string;
     noPbs: string;
+    howItWorks: string;
+    instruction1: string;
+    instruction2: string;
+    instruction3: string;
   };
   common: {
     male: string;
@@ -196,6 +234,7 @@ export interface Dict {
     team: string;
     seedTime: string;
     finalsTime: string;
+    heatTime: string;
     noResults: string;
     loading: string;
     lc: string;
