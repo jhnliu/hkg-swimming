@@ -5,3 +5,11 @@ swimming.db
 results_csv/
 results_pdfs/
 .env*
+data/
+screenshots/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.webp
