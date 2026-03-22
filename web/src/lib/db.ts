@@ -1333,7 +1333,9 @@ async function _getHkssfLeaderboard(
   limit: number = 25,
   filters: HkssfLeaderboardFilters = {}
 ): Promise<PersonalBest[]> {
-  const [stroke, distance] = eventKey.split("_");
+  const parts = eventKey.split("_");
+  const distance = parts[parts.length - 2];
+  const stroke = parts.slice(0, -2).join("_");
 
   const conditions: string[] = [
     `stroke = '${stroke.replace(/'/g, "''")}'`,
@@ -1407,8 +1409,10 @@ export const getHkssfLeaderboardEventKeys = unstable_cache(
     return (rows as { event_key: string }[])
       .map((r) => r.event_key)
       .sort((a, b) => {
-        const [, da] = a.split("_");
-        const [, db] = b.split("_");
+        const pa = a.split("_");
+        const pb = b.split("_");
+        const da = pa[pa.length - 2];
+        const db = pb[pb.length - 2];
         return parseInt(da) - parseInt(db) || a.localeCompare(b);
       });
   },

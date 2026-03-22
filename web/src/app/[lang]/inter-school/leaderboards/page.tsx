@@ -13,7 +13,16 @@ import {
 import { NavSelect } from "@/components/nav-select";
 import { localizedMeta } from "@/lib/seo";
 
-const DEFAULT_EVENT = "freestyle_100_LC";
+const DEFAULT_EVENT = "freestyle_50_LC";
+
+/** Parse event key like "individual_medley_200_LC" → ["individual_medley", "200"] */
+function parseEventKey(key: string): [string, string] {
+  const parts = key.split("_");
+  // last part is course (LC), second-to-last is distance
+  const dist = parts[parts.length - 2];
+  const stroke = parts.slice(0, -2).join("_");
+  return [stroke, dist];
+}
 
 export async function generateMetadata({
   params,
@@ -84,12 +93,12 @@ export default async function HkssfLeaderboardsPage({
       ? optimisticTop
       : await getHkssfLeaderboard(selectedEvent, 25, filters);
 
-  const [selStroke, selDist] = selectedEvent.split("_");
+  const [selStroke, selDist] = parseEventKey(selectedEvent);
 
   const eventSet = new Set(eventKeys);
-  const distances = [...new Set(eventKeys.map((k) => k.split("_")[1]))]
+  const distances = [...new Set(eventKeys.map((k) => parseEventKey(k)[1]))]
     .sort((a, b) => parseInt(a) - parseInt(b));
-  const strokes = [...new Set(eventKeys.map((k) => k.split("_")[0]))];
+  const strokes = [...new Set(eventKeys.map((k) => parseEventKey(k)[0]))];
 
   function bestEvent(stroke: string, dist: string): string {
     const exact = `${stroke}_${dist}_LC`;
