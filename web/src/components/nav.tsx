@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Dict } from "@/lib/i18n";
@@ -41,7 +41,8 @@ export function Nav({ lang, dict }: { lang: Locale; dict: Dict }) {
             href={`/${lang}`}
             className="flex items-center gap-1.5 text-lg font-bold text-white"
           >
-            <Image src="/logo.png" alt="Logo" width={28} height={28} className="rounded-full" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" width={28} height={28} className="rounded-full" />
             HKG Swimming
           </Link>
           <div className="hidden items-center gap-1 md:flex">
