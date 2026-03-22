@@ -157,8 +157,8 @@ export function PbChart({
       </div>
 
       {/* Chart */}
-      <div className="h-72 w-full rounded-lg border border-pool-border bg-surface p-3 dark:border-pool-border dark:bg-surface">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full rounded-lg border border-pool-border bg-surface p-3 dark:border-pool-border dark:bg-surface">
+        <ResponsiveContainer width="100%" height={264}>
           {isSingleEvent ? (
             <LineChart data={chartData as { date: string; time: number; pb: number; label: string; comp: string }[]} margin={{ left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-pool-border)" opacity={0.5} />

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-03-22 — PB Chart Fix & Navigation Dictionary Keys
+
+### Bug fix: PB chart render error (`web/src/components/pb-chart.tsx`)
+- Fixed Recharts `ResponsiveContainer` warning: "The width(-1) and height(-1) of chart should be greater than 0"
+- Changed `height="100%"` to `height={264}` (fixed pixel value) — percentage height resolved to 0 during SSR or before CSS paint
+- Removed redundant `h-72` class from wrapper div since height is now set on `ResponsiveContainer` directly
+
+### Navigation dictionary keys (`web/src/dictionaries/en.json`, `web/src/dictionaries/zh.json`, `web/src/lib/i18n.ts`)
+- Added 4 new nav keys: `tools` (工具), `more` (更多), `overview` (總覽), `schoolRankings` (學校排名)
+- Added corresponding TypeScript types in `Dictionary.nav`
+
 ## 2026-03-22 — Inter-School Competition Pages, Heat/Final Merge & Pill Filters
 
 ### New inter-school frontend pages

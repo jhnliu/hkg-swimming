@@ -29,6 +29,10 @@ export interface Dict {
     changelog: string;
     team: string;
     interSchool: string;
+    tools: string;
+    more: string;
+    overview: string;
+    schoolRankings: string;
   };
   home: {
     title: string;

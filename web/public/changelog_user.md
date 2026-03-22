@@ -2,18 +2,21 @@
 
 ## 2026-03-22
 
-### New Features (latest)
+### Bug Fixes (latest)
+- **PB chart fix** — Fixed an issue where the personal best progression chart on swimmer profiles could fail to render, showing a blank space instead of the chart
+
+### New Features
 - **Inter-School Swimming Results** — Added HKSSF secondary school inter-school competition results covering 9 seasons (2015/16 – 2024/25), Divisions 1/2/3 across HK Island, Kowloon, and combined regions. Over 65,000 results from 270+ schools now searchable
 - **Inter-School Competition Pages** — Browse competitions, view event results with heat and final times, school rankings with medals and points, top-time leaderboards, and individual school profiles
 - **Inter-School Leaderboards** — Top times across all inter-school competitions, filterable by event, gender, grade, season, and division
 
-### Improvements (latest)
+### Improvements
 - **Heat & Final times** — Events with heats and finals now display both times side by side, with finalists showing both rounds and heat-only swimmers clearly marked
 - **Event filters** — Competition results can now be filtered by Gender, Grade, Distance, and Stroke using clickable pill buttons instead of a dropdown list. Filters can be combined freely
 
 ## 2026-03-21
 
-### Improvements (latest)
+### Improvements
 - **Competitions page pagination** — Competitions now load 20 at a time with Previous/Next navigation, instead of loading all at once
 - **Faster competition queries** — Optimized competition listing queries for quicker page loads
 
