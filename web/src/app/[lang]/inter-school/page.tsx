@@ -96,7 +96,7 @@ export default async function InterSchoolPage({
           {dict.interSchool.rankings}
         </Link>
         <Link
-          href={`/${lang}/inter-school/leaderboards`}
+          href={`/${lang}/inter-school/leaderboards?event=freestyle_50m_LC`}
           className="rounded-lg border border-pool-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:border-pool-mid hover:shadow-md dark:border-pool-border dark:bg-surface dark:hover:border-pool-light"
         >
           {dict.interSchool.leaderboards}

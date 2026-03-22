@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   },
   description:
     "Search Hong Kong swimming competition results, track personal bests, and explore rankings across all age groups and events. 搜尋香港游泳比賽成績、個人最佳時間及各年齡組別排名。",
+  applicationName: SITE_NAME,
   keywords: [
     "Hong Kong swimming",
     "HK swimming results",
@@ -43,12 +44,21 @@ export const metadata: Metadata = {
     locale: "en_US",
     alternateLocale: "zh_HK",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} — Hong Kong Swimming Results & Rankings`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} — Hong Kong Swimming Results & Rankings`,
     description:
       "Search Hong Kong swimming competition results, track personal bests, and explore rankings.",
+    images: ["/og-image.png"],
   },
   alternates: {
     canonical: `${SITE_URL}/en`,

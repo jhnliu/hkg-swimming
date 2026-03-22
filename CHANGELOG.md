@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-03-22 — School Rankings & Leaderboards UX Improvements
+
+### Gender filter on school rankings (`web/src/app/[lang]/inter-school/rankings/page.tsx`, `web/src/lib/db.ts`)
+- Added gender filter (Male / Female) pill buttons to the inter-school school rankings page — no "All" option
+- `getHkssfSchoolRankings()` now accepts optional `gender` parameter, filtering `hkssf_results` by `gender = 'M'` or `gender = 'F'`
+- Gender included in cache key for `unstable_cache`
+- Default to latest season and Male when no query params provided
+- Season filter changed from pills to dropdown (`NavSelect`) for compact layout
+- All filters (season dropdown, division pills, gender pills) in a single row
+
+### Breadcrumbs on inter-school sub-pages
+- Added `Breadcrumb` to rankings page (`Inter-School / School Rankings`)
+- Added `Breadcrumb` to leaderboards page (`Inter-School / Leaderboards`)
+
+### Leaderboard default event (`web/src/app/[lang]/inter-school/leaderboards/page.tsx`, `web/src/app/[lang]/inter-school/page.tsx`)
+- Changed `DEFAULT_EVENT` to `freestyle_50m_LC`
+- Leaderboards link from inter-school hub now includes `?event=freestyle_50m_LC` so distance/stroke pills are correctly selected on load
+
 ## 2026-03-22 — PB Chart Fix & Navigation Dictionary Keys
 
 ### Bug fix: PB chart render error (`web/src/components/pb-chart.tsx`)

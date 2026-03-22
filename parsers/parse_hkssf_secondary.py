@@ -146,18 +146,23 @@ def parse_date(text):
 def extract_metadata(filename):
     """Extract season, division, region, competition_id from filename.
 
-    Filename pattern: "1617 sw_results_d1.pdf"
+    Filename patterns:
+      "1617 sw_results_d1.pdf"        -> file_type="results"
+      "2526 sw_heats_d1.pdf"          -> file_type="heats"
+      "2526 sw_finals_d1.pdf"         -> file_type="finals"
     """
     stem = Path(filename).stem
-    m = re.match(r"(\d{4})\s+sw_results_(d\d\w*)", stem)
+    m = re.match(r"(\d{4})\s+sw_(results|heats|finals)_(d\d\w*)", stem)
     if not m:
         return None
 
     season = m.group(1)
-    div_code = m.group(2)
+    file_type = m.group(2)
+    div_code = m.group(3)
     division = div_code[1]  # "1", "2", or "3"
     region = REGION_MAP.get(div_code, "")
     competition_id = f"hkssf_{season}_{div_code}"
+    file_type = file_type  # "results", "heats", or "finals"
 
     season_year = int("20" + season[:2]) if int(season[:2]) < 50 else int("19" + season[:2])
     season_str = f"{season_year}-{season_year + 1}"
@@ -176,6 +181,7 @@ def extract_metadata(filename):
         "region": region,
         "competition_id": competition_id,
         "competition_name": comp_name,
+        "file_type": file_type,
     }
 
 
@@ -618,12 +624,17 @@ def parse_tabular_remainder(remainder, has_lanes):
     return time_str, time_standard, points
 
 
-def parse_tabular_format(pages, metadata, has_lanes):
-    """Parse tabular format PDFs (2122-2425)."""
+def parse_tabular_format(pages, metadata, has_lanes, day_type=None):
+    """Parse tabular format PDFs (2122+).
+
+    day_type: None (legacy combined), "heats", "finals", or "combined_timed_final"
+    For "finals", events without Standard in header are Finals, with Standard are Timed Finals.
+    """
     results = []
     current_event = None
     current_record = ""
     current_date = ""
+    current_day = None  # "day_one" or "final_day", detected from page headers
 
     for page in pages:
         text = page.extract_text()
@@ -637,6 +648,12 @@ def parse_tabular_format(pages, metadata, has_lanes):
             continue
         if re.search(r"(Boys|Girls)\s+(Overall|[ABC]\s+Grade\s*\n)", text) and "Event " not in text:
             continue
+
+        # Detect day from page header (for combined PDFs with day_type=None)
+        if "Day One" in text or "Day Two" in text:
+            current_day = "day_one"
+        elif "Final Day" in text:
+            current_day = "final_day"
 
         # Extract date
         page_date = parse_date(text)
@@ -671,7 +688,40 @@ def parse_tabular_format(pages, metadata, has_lanes):
                 distance = m.group(4)
                 stroke_raw = m.group(5)
                 record = normalize_time(m.group(6))
+                has_standard = m.group(7) is not None
                 is_relay = "x" in distance.lower()
+
+                # Determine heat label
+                if day_type == "heats":
+                    heat_label = "Heat"
+                elif day_type == "finals":
+                    heat_label = "Timed Final" if has_standard else "Final"
+                elif day_type == "combined_timed_final":
+                    heat_label = "Timed Final"
+                elif day_type is None and current_day:
+                    # Legacy combined PDF — infer from page header
+                    if current_day == "day_one":
+                        if has_lanes:
+                            # Format with lanes = true heats (2223+)
+                            heat_label = "Heat"
+                        else:
+                            # No lanes format (2122) = single-day timed finals
+                            heat_label = "Timed Final"
+                    else:  # final_day
+                        heat_label = "Timed Final" if has_standard else "Final"
+                else:
+                    heat_label = ""
+
+                # Determine per-event has_lanes for remainder parsing
+                if day_type == "finals":
+                    event_has_lanes = False
+                elif day_type == "heats":
+                    event_has_lanes = has_lanes
+                elif day_type is None and current_day == "final_day":
+                    event_has_lanes = False
+                else:
+                    event_has_lanes = has_lanes
+
                 current_event = {
                     "event_num": event_num,
                     "gender": gender,
@@ -679,6 +729,9 @@ def parse_tabular_format(pages, metadata, has_lanes):
                     "distance": distance,
                     "stroke": normalize_stroke(stroke_raw),
                     "is_relay": is_relay,
+                    "has_standard": has_standard,
+                    "heat_label": heat_label,
+                    "has_lanes": event_has_lanes,
                 }
                 current_record = record
                 continue
@@ -720,7 +773,7 @@ def parse_tabular_format(pages, metadata, has_lanes):
                         "season": metadata["season"],
                         "division": metadata["division"],
                         "region": metadata["region"],
-                        "heat": "",
+                        "heat": current_event.get("heat_label", ""),
                         "points": "",
                         "record": current_record,
                     })
@@ -754,7 +807,7 @@ def parse_tabular_format(pages, metadata, has_lanes):
                     "season": metadata["season"],
                     "division": metadata["division"],
                     "region": metadata["region"],
-                    "heat": "",
+                    "heat": current_event.get("heat_label", ""),
                     "points": "",
                     "record": current_record,
                 })
@@ -790,7 +843,7 @@ def parse_tabular_format(pages, metadata, has_lanes):
                         "season": metadata["season"],
                         "division": metadata["division"],
                         "region": metadata["region"],
-                        "heat": "",
+                        "heat": current_event.get("heat_label", ""),
                         "points": "",
                         "record": current_record,
                     })
@@ -804,7 +857,7 @@ def parse_tabular_format(pages, metadata, has_lanes):
                 if m:
                     place = int(m.group(1))
                     school = m.group(2)
-                    time_str, time_standard, points = parse_tabular_remainder(m.group(3), has_lanes)
+                    time_str, time_standard, points = parse_tabular_remainder(m.group(3), current_event["has_lanes"])
                     time_seconds = parse_time_to_seconds(time_str)
                     results.append({
                         "competition_id": metadata["competition_id"],
@@ -829,7 +882,7 @@ def parse_tabular_format(pages, metadata, has_lanes):
                         "season": metadata["season"],
                         "division": metadata["division"],
                         "region": metadata["region"],
-                        "heat": "",
+                        "heat": current_event.get("heat_label", ""),
                         "points": points if points is not None else "",
                         "record": current_record,
                     })
@@ -840,7 +893,7 @@ def parse_tabular_format(pages, metadata, has_lanes):
             if parsed:
                 place, name, school, remainder = parsed
 
-                time_str, time_standard, points = parse_tabular_remainder(remainder, has_lanes)
+                time_str, time_standard, points = parse_tabular_remainder(remainder, current_event["has_lanes"])
                 if not time_str:
                     continue
                 time_seconds = parse_time_to_seconds(time_str)
@@ -868,7 +921,7 @@ def parse_tabular_format(pages, metadata, has_lanes):
                     "season": metadata["season"],
                     "division": metadata["division"],
                     "region": metadata["region"],
-                    "heat": "",
+                    "heat": current_event.get("heat_label", ""),
                     "points": points if points is not None else "",
                     "record": current_record,
                 })
@@ -878,8 +931,11 @@ def parse_tabular_format(pages, metadata, has_lanes):
 
 # ---------- Main ----------
 
-def parse_pdf(pdf_path):
-    """Parse a single HKSSF secondary PDF. Returns list of result dicts."""
+def parse_pdf(pdf_path, day_type=None):
+    """Parse a single HKSSF secondary PDF. Returns list of result dicts.
+
+    day_type: None (legacy/auto), "heats", "finals", or "combined_timed_final"
+    """
     metadata = extract_metadata(pdf_path.name)
     if not metadata:
         print(f"  SKIP (cannot parse filename): {pdf_path.name}", file=sys.stderr)
@@ -897,35 +953,139 @@ def parse_pdf(pdf_path):
         results = parse_old_format(pdf.pages, metadata)
     else:
         has_lanes = fmt == "tabular_with_heats"
-        results = parse_tabular_format(pdf.pages, metadata, has_lanes)
+        # For finals files, events without lanes use no-lanes parsing
+        if day_type == "finals":
+            # Finals PDF has mix: finals (no lanes) and timed finals (with lanes-like scoring)
+            # Both use the no-lanes format (time [final_pts] [std_pts])
+            has_lanes = False
+        results = parse_tabular_format(pdf.pages, metadata, has_lanes, day_type)
+
+        # For combined PDFs (day_type=None) with both Day One and Final Day,
+        # remap Day One (Heat) event numbers to match Final Day canonical numbering
+        if day_type is None and any(r["heat"] == "Heat" for r in results):
+            finals_results = [r for r in results if r["heat"] in ("Final", "Timed Final")]
+            if finals_results:
+                event_map = build_event_map_from_finals(finals_results)
+                heat_results = [r for r in results if r["heat"] == "Heat"]
+                remap_heat_event_numbers(heat_results, event_map)
 
     pdf.close()
     return results
 
 
-def main():
-    pdf_files = sorted(
-        f for f in PDF_DIR.glob("*.pdf")
-        if "(1)" not in f.name  # Skip duplicate files
-    )
-    print(f"Found {len(pdf_files)} PDF files in {PDF_DIR}")
+def build_event_map_from_finals(results):
+    """Build a mapping from (gender, grade, distance, stroke) -> event_num from finals results.
 
+    Used to remap heats event numbers to match finals canonical numbering.
+    """
+    event_map = {}
+    for r in results:
+        key = (r["gender"], r["age_group"], r["distance"], r["stroke"])
+        if key not in event_map:
+            event_map[key] = r["event_num"]
+    return event_map
+
+
+def remap_heat_event_numbers(heat_results, event_map):
+    """Remap event numbers in heat results to match finals canonical numbering."""
+    remapped = 0
+    for r in heat_results:
+        key = (r["gender"], r["age_group"], r["distance"], r["stroke"])
+        if key in event_map:
+            r["event_num"] = event_map[key]
+            remapped += 1
+    return remapped
+
+
+def parse_split_division(heats_path, finals_path, metadata):
+    """Parse a division with separate heats and finals PDFs (2526+ format).
+
+    Returns combined results with proper heat/final classification and unified event numbers.
+    """
+    results = []
+
+    # Parse finals first to get canonical event numbering
+    if finals_path:
+        print(f"  Parsing finals: {finals_path.name}", end="")
+        finals_results = parse_pdf(finals_path, day_type="finals")
+        print(f"  -> {len(finals_results)} results")
+        event_map = build_event_map_from_finals(finals_results)
+        results.extend(finals_results)
+    else:
+        event_map = {}
+
+    # Parse heats and remap event numbers
+    if heats_path:
+        print(f"  Parsing heats:  {heats_path.name}", end="")
+        heat_results = parse_pdf(heats_path, day_type="heats")
+        if event_map:
+            remapped = remap_heat_event_numbers(heat_results, event_map)
+            print(f"  -> {len(heat_results)} results ({remapped} event nums remapped)")
+        else:
+            print(f"  -> {len(heat_results)} results")
+        results.extend(heat_results)
+
+    return results
+
+
+def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Collect all PDF files
+    all_pdfs = sorted(
+        f for f in PDF_DIR.glob("*.pdf")
+        if "(1)" not in f.name
+    )
+
+    # Separate into legacy (sw_results) and split (sw_heats/sw_finals)
+    legacy_pdfs = []
+    heats_pdfs = {}  # keyed by (season, div_code)
+    finals_pdfs = {}
+    results_combined = {}  # single-file results like D3HK combined
+
+    for pdf_path in all_pdfs:
+        meta = extract_metadata(pdf_path.name)
+        if not meta:
+            print(f"  SKIP (cannot parse filename): {pdf_path.name}", file=sys.stderr)
+            continue
+        key = (meta["season"], meta["div_code"])
+        if meta["file_type"] == "results":
+            legacy_pdfs.append(pdf_path)
+        elif meta["file_type"] == "heats":
+            heats_pdfs[key] = pdf_path
+        elif meta["file_type"] == "finals":
+            finals_pdfs[key] = pdf_path
+
+    # Find split divisions (have heats and/or finals files)
+    split_keys = sorted(set(heats_pdfs.keys()) | set(finals_pdfs.keys()))
+
+    total_files = len(legacy_pdfs) + len(split_keys)
+    print(f"Found {len(legacy_pdfs)} legacy PDFs + {len(split_keys)} split divisions in {PDF_DIR}")
 
     total_results = 0
     errors = []
+    counter = 0
 
-    for i, pdf_path in enumerate(pdf_files):
-        # Skip empty files
+    # Process legacy single-file PDFs
+    for pdf_path in legacy_pdfs:
+        counter += 1
         if pdf_path.stat().st_size == 0:
-            print(f"[{i+1}/{len(pdf_files)}] {pdf_path.name}  -> SKIP (empty file)")
+            print(f"[{counter}/{total_files}] {pdf_path.name}  -> SKIP (empty file)")
             continue
 
         csv_path = OUTPUT_DIR / (pdf_path.stem + ".csv")
-        print(f"[{i+1}/{len(pdf_files)}] {pdf_path.name}", end="")
+        print(f"[{counter}/{total_files}] {pdf_path.name}", end="")
 
         try:
-            results = parse_pdf(pdf_path)
+            meta = extract_metadata(pdf_path.name)
+            # Check if this is a single-day combined format (all events are timed finals)
+            # e.g. D3HK in 2526 which has no separate heats/finals
+            day_type = None
+            if meta and meta["season"] >= "2526":
+                # For 2526+ results files (not heats/finals), treat as combined timed final
+                day_type = "combined_timed_final"
+
+            results = parse_pdf(pdf_path, day_type=day_type)
             total_results += len(results)
             print(f"  -> {len(results)} results")
 
@@ -937,6 +1097,38 @@ def main():
         except Exception as e:
             print(f"  -> ERROR: {e}")
             errors.append((pdf_path.name, str(e)))
+
+    # Process split heats+finals divisions
+    for key in split_keys:
+        counter += 1
+        season, div_code = key
+        heats_path = heats_pdfs.get(key)
+        finals_path = finals_pdfs.get(key)
+
+        csv_name = f"{season} sw_results_{div_code}.csv"
+        csv_path = OUTPUT_DIR / csv_name
+        print(f"[{counter}/{total_files}] {season} {div_code} (split format)")
+
+        try:
+            meta = extract_metadata((heats_path or finals_path).name)
+            results = parse_split_division(heats_path, finals_path, meta)
+            total_results += len(results)
+            print(f"  Combined -> {len(results)} results")
+
+            if results:
+                # Sort by event_num then place for clean output
+                results.sort(key=lambda r: (
+                    int(r["event_num"]) if r["event_num"] else 999,
+                    0 if r["heat"] == "Timed Final" else (1 if r["heat"] == "Heat" else 2),
+                    int(r["place"]) if r["place"] else 999,
+                ))
+                with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
+                    writer.writeheader()
+                    writer.writerows(results)
+        except Exception as e:
+            print(f"  -> ERROR: {e}")
+            errors.append((f"{season} {div_code}", str(e)))
 
     print(f"\n{'='*60}")
     print(f"Total results: {total_results}")

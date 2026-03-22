@@ -11,9 +11,10 @@ import {
   formatHkssfStrokeZh,
 } from "@/lib/db";
 import { NavSelect } from "@/components/nav-select";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { localizedMeta } from "@/lib/seo";
 
-const DEFAULT_EVENT = "freestyle_50_LC";
+const DEFAULT_EVENT = "freestyle_50m_LC";
 
 /** Parse event key like "individual_medley_200_LC" → ["individual_medley", "200"] */
 function parseEventKey(key: string): [string, string] {
@@ -145,7 +146,14 @@ export default async function HkssfLeaderboardsPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <div className="flex flex-col gap-2">
+        <Breadcrumb
+          lang={lang as Locale}
+          items={[
+            { label: dict.interSchool.title, href: `/${lang}/inter-school` },
+            { label: dict.interSchool.leaderboards },
+          ]}
+        />
         <h1 className="text-3xl font-bold text-foreground">
           {dict.interSchool.title} — {dict.interSchool.leaderboards}
         </h1>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Dict } from "@/lib/i18n";
@@ -40,10 +41,7 @@ export function Nav({ lang, dict }: { lang: Locale; dict: Dict }) {
             href={`/${lang}`}
             className="flex items-center gap-1.5 text-lg font-bold text-white"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 15c2.483 0 4.345-3 6-3s3.517 3 6 3 4.345-3 6-3" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 19c2.483 0 4.345-3 6-3s3.517 3 6 3 4.345-3 6-3" />
-            </svg>
+            <Image src="/logo.png" alt="Logo" width={28} height={28} className="rounded-full" />
             HKG Swimming
           </Link>
           <div className="hidden items-center gap-1 md:flex">

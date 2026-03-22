@@ -2,7 +2,12 @@
 
 ## 2026-03-22
 
-### Bug Fixes (latest)
+### Improvements (latest)
+- **School rankings gender filter** — Inter-school school rankings now show separate rankings for Male and Female, defaulting to the latest season and Male
+- **Breadcrumbs** — Added navigation breadcrumbs to inter-school rankings and leaderboard pages for easier navigation
+- **Leaderboard defaults** — Leaderboard now opens with 50m Freestyle selected by default so results display immediately
+
+### Bug Fixes
 - **PB chart fix** — Fixed an issue where the personal best progression chart on swimmer profiles could fail to render, showing a blank space instead of the chart
 
 ### New Features

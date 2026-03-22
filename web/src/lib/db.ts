@@ -1291,14 +1291,17 @@ export async function getHkssfCompetitionResultsBySwimmer(
 
 export async function getHkssfSchoolRankings(
   season?: string,
-  division?: string
+  division?: string,
+  gender?: string
 ): Promise<HkssfSchoolRanking[]> {
   const conditions: string[] = ["time_seconds IS NOT NULL"];
   if (season) conditions.push(`season = '${season.replace(/'/g, "''")}'`);
   if (division) conditions.push(`division = '${division.replace(/'/g, "''")}'`);
+  if (gender === "M") conditions.push("gender = 'M'");
+  else if (gender === "F") conditions.push("gender = 'F'");
   const where = conditions.join(" AND ");
 
-  const cacheKey = ["hkssf-rankings", season || "", division || ""];
+  const cacheKey = ["hkssf-rankings", season || "", division || "", gender || ""];
   const cached = unstable_cache(
     async () => {
       const rows = await sql`${sql.unsafe(`

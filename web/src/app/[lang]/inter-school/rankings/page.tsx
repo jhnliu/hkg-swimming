@@ -4,6 +4,8 @@ import Link from "next/link";
 import { isLocale, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { getHkssfSchoolRankings, getHkssfFilterOptions } from "@/lib/db";
+import { NavSelect } from "@/components/nav-select";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { localizedMeta } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -45,17 +47,22 @@ export default async function RankingsPage({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ season?: string; division?: string }>;
+  searchParams: Promise<{ season?: string; division?: string; gender?: string }>;
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
 
-  const { season, division } = await searchParams;
+  const { season: seasonParam, division, gender: genderParam } = await searchParams;
 
-  const [dict, filterOptions, rankings] = await Promise.all([
+  const filterOptions = await getHkssfFilterOptions();
+
+  // Default to latest season and male
+  const season = seasonParam || filterOptions.seasons[0];
+  const gender = genderParam || "M";
+
+  const [dict, rankings] = await Promise.all([
     getDictionary(lang as Locale),
-    getHkssfFilterOptions(),
-    getHkssfSchoolRankings(season, division),
+    getHkssfSchoolRankings(season, division, gender),
   ]);
 
   const PILL = "rounded-md px-2 py-1 text-xs font-medium transition-colors";
@@ -64,15 +71,25 @@ export default async function RankingsPage({
 
   function filterUrl(key: string, value: string | undefined): string {
     const p = new URLSearchParams();
-    if (season && key !== "season") p.set("season", season);
-    if (division && key !== "division") p.set("division", division);
-    if (value) p.set(key, value);
-    return `/${lang}/inter-school/rankings${p.toString() ? `?${p.toString()}` : ""}`;
+    const s = key === "season" ? value : season;
+    const g = key === "gender" ? value : gender;
+    const d = key === "division" ? value : division;
+    if (s) p.set("season", s);
+    if (d) p.set("division", d);
+    if (g) p.set("gender", g);
+    return `/${lang}/inter-school/rankings?${p.toString()}`;
   }
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <div className="flex flex-col gap-2">
+        <Breadcrumb
+          lang={lang as Locale}
+          items={[
+            { label: dict.interSchool.title, href: `/${lang}/inter-school` },
+            { label: dict.interSchool.rankings },
+          ]}
+        />
         <h1 className="text-3xl font-bold text-foreground">
           {dict.interSchool.rankings}
         </h1>
@@ -83,19 +100,15 @@ export default async function RankingsPage({
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-muted dark:text-pool-light/60">
-          {dict.interSchool.season}:
-        </span>
-        <Link href={filterUrl("season", undefined)} className={!season ? PILL_ACTIVE : PILL_INACTIVE}>
-          {dict.interSchool.allSeasons}
-        </Link>
-        {filterOptions.seasons.map((s) => (
-          <Link key={s} href={filterUrl("season", s)} className={season === s ? PILL_ACTIVE : PILL_INACTIVE}>
-            {seasonDisplay(s)}
-          </Link>
-        ))}
+        <NavSelect
+          id="season"
+          label={dict.interSchool.season}
+          value={season}
+          options={filterOptions.seasons.map((s) => ({ value: s, label: seasonDisplay(s) }))}
+          urlMap={Object.fromEntries(filterOptions.seasons.map((s) => [s, filterUrl("season", s)]))}
+        />
 
-        <span className="hidden text-pool-border dark:text-pool-border sm:inline">|</span>
+        <span className="text-pool-border dark:text-pool-border">|</span>
 
         <span className="text-xs font-medium text-muted dark:text-pool-light/60">
           {dict.interSchool.division}:
@@ -108,6 +121,18 @@ export default async function RankingsPage({
             {lang === "en" ? `D${d}` : `${d}組`}
           </Link>
         ))}
+
+        <span className="text-pool-border dark:text-pool-border">|</span>
+
+        <span className="text-xs font-medium text-muted dark:text-pool-light/60">
+          {dict.leaderboard.gender}:
+        </span>
+        <Link href={filterUrl("gender", "M")} className={gender === "M" ? PILL_ACTIVE : PILL_INACTIVE}>
+          {dict.common.male}
+        </Link>
+        <Link href={filterUrl("gender", "F")} className={gender === "F" ? PILL_ACTIVE : PILL_INACTIVE}>
+          {dict.common.female}
+        </Link>
       </div>
 
       {/* Rankings table */}
