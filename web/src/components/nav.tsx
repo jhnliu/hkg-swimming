@@ -41,8 +41,10 @@ export function Nav({ lang, dict }: { lang: Locale; dict: Dict }) {
             href={`/${lang}`}
             className="flex items-center gap-1.5 text-lg font-bold text-white"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="" width={28} height={28} className="rounded-full" />
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 15c2.483 0 4.345-3 6-3s3.517 3 6 3 4.345-3 6-3" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 19c2.483 0 4.345-3 6-3s3.517 3 6 3 4.345-3 6-3" />
+            </svg>
             HKG Swimming
           </Link>
           <div className="hidden items-center gap-1 md:flex">
